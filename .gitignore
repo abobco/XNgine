@@ -1,0 +1,9 @@
+
+**/*-src
+**/*-subbuild
+**/logs
+**/old-shit
+**CMakeCache.txt
+**/CMakeFiles
+**/node_modules
+*ninja*

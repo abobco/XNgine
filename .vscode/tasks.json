@@ -1,0 +1,160 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+
+  // ---------------------------------------------------------------
+  // !! ! Change this to make these tasks work for your raspi !!! ! !
+  // ---------------------------------------------------------------
+  "options": {
+      "env": {
+        // connection info to ssh into the remote server
+        "hostname" : "10.0.0.2",           
+        "user": "pi",                
+        "remote_root": "/home/pi/shared/XNgine-src",  // path to the clone on the raspi
+        "putty_key": "C:/Users/abobc/.ssh/raspi-key.ppk", // path to private ssh key from puttygen
+
+        // used to launch an exe on the remote server through a task
+        "remote_exe_filename": "XNgine",
+        // "remote_exe_args": "",
+        "remote_exe_args": "../lua/tests/particles.lua",
+        // "remote_exe_args": "../lua/tests/shaders.lua",
+        // "remote_exe_args": "../lua/tests/api_tests.lua",
+        // "remote_exe_args": "../lua/tests/gameloop.lua",
+
+        // if the project has too many folders, winscp's file-sync won't work properly, so
+        // you can set exclude patterns here
+        "file_sync_filemask": "|*.git/;*-src/;*-subbuild/;*CMakeFiles/;" // https:k//winscp.net/eng/docs/file_mask 
+        //"file_sync_filemask": "|*.git/;*-subbuild/;*CMakeFiles/;*my-app/" // https://winscp.net/eng/docs/file_mask 
+      }
+  },
+  // ---------------------------------------------------------------
+
+    "tasks": [
+      {
+        "label": "remote-gdb",
+        "type": "shell",
+        "command": "ssh $env:user@$env:hostname -t command cd $env:remote_root/build '&&' sudo gdb --args ./$env:remote_exe_filename $env:remote_exe_args"
+      },
+      // CMake stuff
+      {
+        "label": "config",
+        "type": "shell",
+        "command": "CMake -GNinja .. -D GCC_ARM_LINKER_EXE=D:/SysGCC/raspberry/bin/arm-linux-gnueabihf-ld.exe",
+        "options": { "cwd": "${workspaceFolder}/build" }
+      },
+      {
+        "label": "build",
+        "type": "shell",
+        "command": "ninja",
+        "group": {
+          "kind": "build",  // bind to ctrl + shift + b
+          "isDefault": true
+        },
+        "options": {"cwd": "${workspaceFolder}/build"}
+      },
+      {
+        "label": "cppcheck",
+        "type": "shell",
+        "command": "cppcheck src --force"
+      },
+      // syncs files from the host to the raspi whenever a change is saved
+      {
+        "label": "file sync",
+        "type": "shell",
+        "command": "winscp.exe /console /script='file_sync.txt' /parameter ${workspaceFolder}/$env:file_sync_subdir $env:remote_root $env:remote_exe_filename $env:file_sync_filemask",
+        //"auto": true
+      },
+      // SSH into the server. Requires a public/private key pair between the computers
+      {
+        "label": "OpenSSH shell",
+        "type": "shell",
+        "command": "ssh $env:user@$env:hostname -t command cd $env:remote_root ';' /bin/bash",
+        "group": {
+          "kind": "test", // bind to ctrl + shift + t (you might have to rebind this in your hotkeys)
+          "isDefault": true 
+        }  
+      },
+      // launces an exe defined in the options on the remote server, showing console output in the task terminal
+      {
+        "label": "run",
+        "type": "shell",
+        "command": "ssh $env:user@$env:hostname -t command cd $env:remote_root/build '&&' sudo ./$env:remote_exe_filename $env:remote_exe_args",
+      },
+    // sync a ps4 controller
+    {
+      "label": "Bluetooth CLI",
+      "type": "shell",
+      "command": "ssh $env:user@$env:hostname -t command cd $env:remote_root/bluetooth/scripts '&&' sudo python BT-CLI.py",
+    },
+    // launch bluetooth server
+    {
+      "label": "Bluetooth server",
+      "type": "shell",
+      "command": "plink.exe  -i $env:putty_key -ssh $env:user@$env:hostname -t $env:bt_server_cmd",
+    }
+  ]
+  //     // CMake stuff
+  //     {
+  //       "label": "config",
+  //       "type": "shell",
+  //       "command": "CMake -GNinja .. -D GCC_ARM_LINKER_EXE=D:/SysGCC/raspberry/bin/arm-linux-gnueabihf-ld.exe",
+  //       "options": { "cwd": "${workspaceFolder}/build" }
+  //     },
+  //     {
+  //       "label": "build",
+  //       "type": "shell",
+  //       "command": "ninja",
+  //       "group": {
+  //         "kind": "build",  // bind to ctrl + shift + b
+  //         "isDefault": true
+  //       },
+  //       "options": {"cwd": "${workspaceFolder}/build"}
+  //     },
+  //     {
+  //       "label": "remote-gdb",
+  //       "type": "shell",
+  //       "command": "plink.exe -i $env:putty_key -ssh $env:user@$env:hostname -t cd $env:remote_root/build '&&' sudo gdb --args $env:remote_exe_filename $env:remote_exe_args"
+  //     },
+  //     {
+  //       "label": "cppcheck",
+  //       "type": "shell",
+  //       "command": "cppcheck src --force"
+  //     },
+  //     // syncs files from the host to the raspi whenever a change is saved
+  //     {
+  //       "label": "file sync",
+  //       "type": "shell",
+  //       "command": "winscp.exe /console /script='file_sync.txt' /parameter ${workspaceFolder}/$env:file_sync_subdir $env:remote_root $env:remote_exe_filename $env:file_sync_filemask",
+  //       //"auto": true
+  //     },
+  //     // SSH into the server. Requires a public/private key pair between the computers
+  //     {
+  //       "label": "OpenSSH shell",
+  //       "type": "shell",
+  //       "command": "ssh $env:user@$env:hostname -t command cd $env:remote_root ';' /bin/bash",
+  //       "group": {
+  //         "kind": "test", // bind to ctrl + shift + t (you might have to rebind this in your hotkeys)
+  //         "isDefault": true 
+  //       }  
+  //     },
+  //     // launces an exe defined in the options on the remote server, showing console output in the task terminal
+  //     {
+  //       "label": "run",
+  //       "type": "shell",
+  //       "command": "plink.exe -i $env:putty_key -ssh $env:user@$env:hostname -t cd $env:remote_root/build '&&' sudo ./$env:remote_exe_filename $env:remote_exe_args",
+  //     },
+  //   // sync a ps4 controller
+  //   {
+  //     "label": "Bluetooth CLI",
+  //     "type": "shell",
+  //     "command": "ssh $env:user@$env:hostname -t command cd $env:remote_root/bluetooth/scripts '&&' sudo python BT-CLI.py",
+  //   },
+  //   // launch bluetooth server
+  //   {
+  //     "label": "Bluetooth server",
+  //     "type": "shell",
+  //     "command": "plink.exe  -i $env:putty_key -ssh $env:user@$env:hostname -t $env:bt_server_cmd",
+  //   }
+  // ]
+}

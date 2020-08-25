@@ -1,0 +1,40 @@
+{
+    "files.associations": {
+        "functional": "c",
+        "system_error": "c",
+        "xtr1common": "c",
+        "*.m": "c",
+        "xiosbase": "c",
+        "cstddef": "cpp",
+        "deque": "cpp",
+        "fstream": "cpp",
+        "limits": "cpp",
+        "memory": "cpp",
+        "sstream": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp",
+        "xhash": "cpp",
+        "xlocale": "cpp",
+        "xstring": "cpp",
+        "xutility": "cpp",
+        "list": "cpp",
+        "string": "cpp",
+        "optional": "cpp",
+        "new": "cpp",
+        "type_traits": "cpp",
+        "random": "c"
+    },
+    "C_Cpp.default.includePath": [
+        "./build/_deps/raylib-build/src/",
+        "./build/_deps/libwebsockets-build/include/",
+        "D:/SysGCC/raspberry/arm-linux-gnueabihf/sysroot/usr/include/",
+        "D:/SysGCC/raspberry/arm-linux-gnueabihf/sysroot/usr/include/arm-linux-gnueabihf/",
+        "D:/SysGCC/raspberry/arm-linux-gnueabihf/include/arm-linux-gnueabihf/",
+    ],
+    "window.restoreWindows": "all",
+    "cmake.configureOnOpen": false
+    // "C_Cpp.default.systemIncludePath" : [
+    //     "D:/SysGCC/raspberry/arm-linux-gnueabihf/include/arm-linux-gnueabihf/",
+    //     // "D:/SysGCC/raspberry/arm-linux-gnueabihf/include/arm-linux-gnueabihf/sys"
+    // ]
+}

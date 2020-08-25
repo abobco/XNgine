@@ -1,0 +1,31 @@
+// Place your key bindings in this file to override the defaults
+[
+    {
+        "key": "ctrl+shift+h",
+        "command": "workbench.action.tasks.runTask",
+        "args": "node http-server"
+    },
+    {
+        "key": "ctrl+n", 
+        "command": "explorer.newFile"
+    },
+    {
+        "key": "ctrl+shift+a",
+        "command": "bookmarksExplorer.focus"
+    },
+    {
+        "key": "ctrl+shift+t",
+        "command": "-workbench.action.reopenClosedEditor"
+    },
+    {
+        "key": "ctrl+shift+t",
+        "command": "workbench.action.tasks.test"
+    },
+    {
+        "key": "ctrl+alt+b",
+        "command": "workbench.action.tasks.runTask",
+        "args": "ninja"
+    },
+    { "key": "ctrl+shift+k", "command": "workbench.action.terminal.focusNext" },
+    { "key": "ctrl+shift+j", "command": "workbench.action.terminal.focusPrevious" },
+]

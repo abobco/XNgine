@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+      <link rel="shortcut icon" href="cat.ico" />
+      <title>Yamcade</title>
+      <link rel="stylesheet" href="style.css">
+      <meta http-equiv="Content-Security-Policy" content="default-src *; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://www.google.com">
+
+   </head>
+   <body>
+      <div id="do-results">
+
+         <div id="cube" class="cube unselectable">
+            <div class="face one">1</div>
+            <div class="face two">2</div>
+            <div class="face three">3</div>
+            <div class="face four">4</div>
+            <div class="face five">5</div>
+            <div class="face six">6</div>
+         </div>
+
+         <button class="button" id='permission-button'>Request motion permission</button>
+        
+         <div id="buttons" class="hidden unselectable">
+            <button class="qbutton" id="quit-button" class="hidden">Quit</button>
+            <button class="dbutton" id="debug-button"class="hidden">Debug</button>
+            <button class="dbutton" id="calibrate-button"class="hidden">Calibrate</button>
+
+            <div class="split left">
+               <button class="a block" id="a-button" class="hidden">A</button>
+            </div>
+            <div class="split right">
+                <button class="b block" id="b-button" class="hidden">B</button>
+            </div>
+         </div>
+         
+         <div id="do-info" class="hidden">
+            <p>
+               Gyro Coordinates:
+               (<span id="beta" class="value">null</span>,
+               <span id="gamma" class="value">null</span>,
+               <span id="alpha" class="value">null</span>)
+            </p>
+            <p>
+               Game Coordinates:
+               (<span id="x" class="value">null</span>,
+               <span id="y" class="value">null</span>)
+            </p>
+         </div>
+         
+         <div id="dm-info" class="hidden">
+            <p>
+               Acceleration:
+               (<span id="acceleration-x" class="value">null</span>,
+               <span id="acceleration-y" class="value">null</span>,
+               <span id="acceleration-z" class="value">null</span>)
+               m/s<sup>2</sup>
+            </p>
+            <p>
+               direction:
+               (<span id="acceleration-including-gravity-x" class="value">null</span>,
+               <span id="acceleration-including-gravity-y" class="value">null</span>,
+               <span id="acceleration-including-gravity-z" class="value">null</span>)
+               m/s<sup>2</sup>
+            </p>
+            <p>
+               Rotation rate:
+               (<span id="rotation-rate-beta" class="value">null</span>,
+               <span id="rotation-rate-gamma" class="value">null</span>,
+               <span id="rotation-rate-alpha" class="value">null</span>)
+            </p>
+            <!-- <p>
+               Interval: <span id="interval" class="value">0</span> seconds
+            </p> -->
+         </div>
+      </div>    
+      <script src="main.js"></script>
+   </body>
+</html>
