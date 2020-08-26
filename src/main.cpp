@@ -1,49 +1,5 @@
 /*******************************************************************************************
- * By Austin Bobco 5/08/2020
- *  Snake-like prototype game, intended to run on the raspi zero w
- *  Should work with most bluetooth gamepads (tested with ps4 & nintendo switch pro controllers)
- *  Runs a real-time websocket chat server concurrently with the game
- * 
- * Goal: accept & display gyroscrope inputs from mobile websocket clients
- * ========================================================================================== 
- *    multiplayer server performance improvement ideas:
- *    ----------------------------------------------------------------------------------------
- *        - search for a more game focused websocket library
- *        - multithreading? 
- *              UPDATE: DONE - 5/14/20 
- *              Running the server on its own thread seems to have fixed the performance drop
- * 
- *        - write a native android client to compare with websocket performance
- *              UPDATE: DONE - 6/18/20
- *                         
- *         
- *     Single Player Mode:
- *     -------------------------------------------------------------------------------------------------
- *        - add a rigid body simulation
- *        - drop particles from the ceiling that are affected by gravity, have collisions with your tail
- *        - eat them to increase your score/grow tail
- *        - drop bombs that break holes in your tail or kill the player if they explode on the head
- * 
- *      Writing a game engine now i guess? 
- *      ------------------------------------------------------------------------------------------
- *          - Scene layers
- *          - ECS 
- *          - Raycasting
- *          - Physics
- *          
- * 
- *      Optimization rabbit holes
- *      -------------------------------------------------------------------------------------------
- *          - Lua:
- *             * replace global color tables with an integer indexed color palette. 
- *                  - Ideally would still support custom color inputs; probably easiest to write that
- *                    polymorphism in lua
- *          - Collisions:
- *             * spatial hash
- *             * remove sqrt()s
- *          - Graphics:
- *             * replace geometry primitives with textures for batchin
- *              
+ * By Austin Bobco 5/08/2020    
  ********************************************************************************************/
 // #include "gperftools/profiler.h" 
 
