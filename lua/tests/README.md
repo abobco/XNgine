@@ -99,7 +99,7 @@ function _fixedUpdate() -- gets called at 60 hz
 end
 ```              
 
-# particles:
+## particles:
 * `particle_system.new( color, max_speed, acceleration, max_scale, scale_rate )`
 * `particle_system:set(x, y)` - set spawn position
 * `particle_system:update(particle_to_spawn)` - update particle attributes, spawn new particles, delete dead particles    
