@@ -1,26 +1,40 @@
 -- override the built in game loop
 
-time = 0
 xabnab = load_texture("xabnab.png")
 total_xabs = 100
+
 -- create render-texture matching the screen dims
 layer = load_render_texture( XN_SETTINGS.SCREEN_WIDTH, XN_SETTINGS.SCREEN_HEIGHT )
-filter = load_shader(nil, "resources/shaders/glsl100/swirl.fs")
+filter = load_shader(nil, "../shaders/glsl100/swirl.fs")
 
 swirl_unif = get_uniform_loc(filter, "center")
 print(swirl_unif)
 cursor = { x=XN_SETTINGS.SCREEN_WIDTH/2, y=XN_SETTINGS.SCREEN_HEIGHT/2 }
 
+time = 0
+interval = 1/60
+previous_frame_time = get_time()
+lag = 0
 while ( true ) do 
+
+    -- _fixedUpdate() equivalent
+    local current_time = get_time()
+    local elapsed_time = current_time - previous_frame_time
+    previous_frame_time = current_time
+    lag += elapsed_time
+    while lag >= interval do
+        time += interval
+        lag -= interval
+    end
+    
     cursor = get_cursor_pos(0)
     set_uniform( 
         filter, swirl_unif, 
         {x = cursor.x, y=XN_SETTINGS.SCREEN_HEIGHT-cursor.y }, -- flip y axis for opengl
         UNIFORM_VEC2 )
-    time = get_time()
+
     begin_drawing()
         cls() -- clear screen
-
         -- draw stuff to render-texture
         begin_texture_mode(layer)
             cls()

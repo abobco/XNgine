@@ -65,7 +65,7 @@ int main(int argc, const char **argv)
     // Vector2 display = get_display_dimensions();
     
     SetTraceLogLevel(settings._LOG_LEVEL);
-    InitWindow(settings._SCREEN_WIDTH, settings._SCREEN_HEIGHT, "Keyboard + Controller input");
+    InitWindow(settings._SCREEN_WIDTH, settings._SCREEN_HEIGHT, "XNgine");
     // InitAudioDevice();
     DrawGrid(10, 1);
 
