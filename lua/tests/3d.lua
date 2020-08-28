@@ -1,4 +1,6 @@
-dofile("../lua/3dcam.lua")  -- helper fn, 
+-- iqm model, animation loading. 
+
+dofile("../lua/3dcam.lua")  -- helper fn
 
 time = 0
 interval = 1/60
@@ -13,7 +15,7 @@ xab = load_model("../models/xabnab.iqm")
 load_model_mat(xab, "../models/orc8.png", 0)
 load_animations(xab , "../models/xabnab.iqm")
 
-curr_evt = {x=0, y=0}
+curr_evt = vec(0,0)
 
 -- _fixedUpdate() is called at 60 hz
 function _fixedUpdate()
