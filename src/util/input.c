@@ -100,16 +100,15 @@ int getch()
     }
 }
 
-TerminalInfo create_TerminalInfo( char *input_buffer, lua_State *L ) {
+TerminalInfo create_TerminalInfo(  lua_State *L ) {
+    char *ib = calloc( 512, sizeof(char));
     TerminalInfo t = {
         false,
         0,
         L,
-        // hist,
         0,
         "terminal_history.txt",
-        input_buffer,
-
+        ib,
     };
     
     return t;
@@ -118,11 +117,13 @@ TerminalInfo create_TerminalInfo( char *input_buffer, lua_State *L ) {
 void handle_keyboard_input(TerminalInfo *terminal) {
     if ( kbhit() ) {
         char c = getch();
+        // PRINT(c);
         if ( !terminal->isOpen) {
             switch (c) {
                 case '`': 
                     terminal->isOpen = true; // send keyboard input to lua console
                     printf("\n%c[2J[LUA CONSOLE]:\n > \n", 27);    
+                    // printf("\n[LUA CONSOLE]:\n > \n");    
                 break;
 
                 case 'c':
@@ -173,6 +174,7 @@ void handle_keyboard_input(TerminalInfo *terminal) {
                     else if ( c != VK_BACKSPACE )
                         terminal->input[terminal->cursorPos++] = c;
                     printf("%c[2J[LUA CONSOLE]:\n > %s", 27, terminal->input);
+                    // printf("[LUA CONSOLE]:\n > %s", terminal->input);
                     printf("\n");
                 }
             }

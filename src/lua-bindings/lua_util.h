@@ -6,10 +6,12 @@ extern "C" {
 
 #include "raylib.h"
 
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
+#include "../../build/_deps/lua-5.4.0/install/include/lua.h"
+#include "../../build/_deps/lua-5.4.0/install/include/lauxlib.h"
+#include "../../build/_deps/lua-5.4.0/install/include/lualib.h"
 #include "../graphics/particles.h"
+
+#define PRINT(a) printf(#a " = %d\n", a)
 
 typedef struct XN_SETTINGS {
     // debug log option
@@ -18,11 +20,30 @@ typedef struct XN_SETTINGS {
     // scene
     int _SCREEN_WIDTH;
     int _SCREEN_HEIGHT;
+
+    int _WEBSOCKET_PORT;
+    char _WEBSOCKET_DOMAIN[124];
 } XN_SETTINGS;
+
+struct Guy {
+    Model model;
+    Texture2D tex;
+    Vector3 pos;
+    int animsCount;
+    ModelAnimation *anims;
+    int animFrameCounter;
+};
+
+typedef struct AnimationSet {
+    ModelAnimation *anims;
+    int animsCount;
+} AnimationSet;
 
 // globals accessed by both scripts and source code
 typedef struct XN_GameState {
     XN_SETTINGS *settings;
+    Model *models;
+    AnimationSet *animSet;
 } XN_GameState;
 
 typedef struct FloatArray {
@@ -42,6 +63,8 @@ int lua_checkField( lua_State *L, const char *key, int table_stack_index, int ty
     ({ int retval = lua_checkField(L, key, i, LUA_TNUMBER) == 0 ? luaL_checkinteger(L, -1) : -1; lua_pop(L, 1); retval; })
 #define lua_checkFloatField(L, key, i) \
     ({ float retval = lua_checkField(L, key, i, LUA_TNUMBER) == 0 ? lua_tonumber(L, -1) : -1; lua_pop(L, 1); retval; })
+#define lua_checkStringField(L, key, i) \
+    ({ const char *retval = lua_checkField(L, key, i, LUA_TSTRING) == 0 ? luaL_checkstring(L, -1) : NULL; lua_pop(L, 1); retval; })
 
 void lua_setFloatField(lua_State *L, const char *key, float value);
 void lua_setIntField(lua_State *L, const char *key, int value);
@@ -69,7 +92,7 @@ XN_SETTINGS load_settings(lua_State *L);
 XN_SETTINGS *get_settings();
 
 XN_GameState create_XN_GameState( XN_SETTINGS *settings);
-int lua_setGameState(XN_GameState *state, XN_SETTINGS *s);
+int lua_setGameState(XN_GameState *state);
 XN_GameState *get_gamestate();
 
 int lua_GetTime( lua_State *L ); // Returns elapsed time in seconds since InitWindow() 
@@ -127,9 +150,23 @@ int lua_getShaderUniformLoc( lua_State *L);
 int lua_DrawFPS( lua_State *L ); // Shows current FPS 
 int lua_loadAudioStream(lua_State *L);
 
+// 3d
+int lua_BeginMode3D( lua_State *L ); // Initializes 3D mode with custom camera (3D) 
+int lua_EndMode3D( lua_State *L ); // Ends 3D mode and returns to default 2D orthographic mode 
+int lua_DrawGrid( lua_State *L );
+int lua_SetCameraMode( lua_State *L );
+int lua_loadModel( lua_State *L );
+int lua_unloadModel( lua_State *L );
+int lua_drawModel( lua_State *L );
+int lua_LoadModelMat( lua_State *L );
+int lua_LoadModelAnimations( lua_State *L );
+int lua_UpdateModelAnimation( lua_State *L );
+int lua_getAnimFrameCount( lua_State *L );
+int lua_RotateModelEuler(lua_State *L);
+
 // define lua host libraries
 static const struct luaL_Reg lua_server_f[] = {
-    {"pop", lua_popNewMessages },
+    {"pop_unsafe", lua_popNewMessages },
     {"get_connections", lua_getConnections },
     {"get_connected", lua_get_connected },
     { "get_motion", lua_getMotionData },
@@ -189,6 +226,19 @@ static const struct luaL_Reg lua_raylib[] = {
     { "draw_fps", lua_DrawFPS },
     { "load_audiostream", lua_loadAudioStream },
     { "perlin2d", lua_getPerlinNoise},
+    
+    { "set_camera_mode", lua_SetCameraMode },
+    { "begin_3d_mode", lua_BeginMode3D },
+	{ "end_3d_mode", lua_EndMode3D },
+	{ "load_model", lua_loadModel },
+	{ "draw_model", lua_drawModel },
+	{ "unload_model", lua_unloadModel },
+	{ "load_model_mat", lua_LoadModelMat },
+	{ "load_animations", lua_LoadModelAnimations },
+	{ "update_model_animation", lua_UpdateModelAnimation },
+	{ "get_animation_frame_count", lua_getAnimFrameCount },
+	{ "model_rotate_euler", lua_RotateModelEuler },
+	{ "draw_grid", lua_DrawGrid },
     {0,0}   // terminator 
 };
 

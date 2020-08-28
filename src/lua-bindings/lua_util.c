@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "../util/bob_math.h"
+#include <string.h>
 
 static XN_GameState* game_state;
 static XN_SETTINGS *game_settings;
@@ -10,16 +11,18 @@ static XN_SETTINGS *game_settings;
 XN_GameState *get_gamestate() { return game_state; }
 XN_SETTINGS *get_settings() { return game_settings; }
 
-int lua_setGameState(XN_GameState* state, XN_SETTINGS* s) {
+int lua_setGameState(XN_GameState* state) {
     game_state = state;
-    game_settings = s;
+    game_settings = state->settings;
     return 0;
 }
 
 XN_GameState create_XN_GameState( XN_SETTINGS *settings) {
     XN_GameState newgame;
-
     newgame.settings = settings;
+
+    newgame.models = malloc( sizeof( Model) * 64 );
+    newgame.animSet = malloc( sizeof( AnimationSet ) * 64 );
     return newgame;
 }
 
@@ -167,21 +170,6 @@ int lua_floatArrayToString (lua_State *L) {
     return 1;
 }
 
-// int lua_submitFloatArray( lua_State *L ) {
-//     FloatArray *a = lua_checkFloatArray(L);
-//     int id = luaL_checkinteger(L, 2);
-
-//     XN_GameState *g = get_gamestate();
-//     luaL_argcheck(L, 0 <= id && id < MAX_CONNECTIONS, 2,
-//             "index out of range");
-
-//     for ( int i =0; i < 8; i++ ) {
-//         Vector2 v = {a->buffer[2*i], a->buffer[2*i+1]};
-//         g->bomber_verts[id][i] = v;
-//     }
-
-//     return 0;
-// }
 
 int lua_openFloatArrayLib(lua_State *L) {
     luaL_newmetatable(L, "Bob.FloatArray");
@@ -230,6 +218,8 @@ XN_SETTINGS load_settings(lua_State *L) {
     settings._LOG_LEVEL              = lua_checkIntField(L, "LOG_LEVEL", -1);
     settings._SCREEN_WIDTH           = lua_checkIntField(L, "SCREEN_WIDTH", -1);
     settings._SCREEN_HEIGHT          = lua_checkIntField(L, "SCREEN_HEIGHT", -1);
+    settings._WEBSOCKET_PORT         = lua_checkIntField(L, "WEBSOCKET_PORT", -1);
+    strcpy(settings._WEBSOCKET_DOMAIN, lua_checkStringField(L, "WEBSOCKET_DOMAIN", -1));
 
     return settings;
 }

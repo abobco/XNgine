@@ -21,4 +21,6 @@ end
 function _draw() -- called every frame update
     explosion:draw()
     trail:draw()
+
+    draw_fps()
 end

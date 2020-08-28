@@ -32,7 +32,8 @@
         "D:/SysGCC/raspberry/arm-linux-gnueabihf/include/arm-linux-gnueabihf/",
     ],
     "window.restoreWindows": "all",
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "python.pythonPath": "C:\\Users\\abobc\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe"
     // "C_Cpp.default.systemIncludePath" : [
     //     "D:/SysGCC/raspberry/arm-linux-gnueabihf/include/arm-linux-gnueabihf/",
     //     // "D:/SysGCC/raspberry/arm-linux-gnueabihf/include/arm-linux-gnueabihf/sys"

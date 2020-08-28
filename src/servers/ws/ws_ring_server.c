@@ -3,10 +3,10 @@
 #include "ws_common.h"
 #include "protocol_lws_minimal.c"
 
+#include <string.h>
+
 #define MY_DOMAIN "www.studiostudios.net"
 #define MY_MOUNT "../client"
-
-Socket start_server();
 
 static struct lws_protocols protocols[] = {
 	{ "http", lws_callback_http_dummy, 0, 0 },
@@ -49,8 +49,67 @@ unsigned long long ms_since_epoch() {
 
 }
 
+pthread_cond_t start_cond = PTHREAD_COND_INITIALIZER;
+
 void *start_server_loop(void* argv) {
-    Socket server_sock = start_server();
+	pthread_mutex_lock(&binary_sem); 
+	ServerOptions s = *(ServerOptions*) argv;
+    
+	Socket server_sock;
+	struct lws_context_creation_info info;
+	struct lws_context *context;
+	int n = 0, logs = LLL_USER | LLL_ERR | LLL_WARN | LLL_NOTICE;
+
+	signal(SIGINT, sigint_handler);
+
+	memset(&info, 0, sizeof info); /* otherwise uninitialized garbage */
+	info.port = s.port;
+	info.mounts = &mount;
+	info.protocols = protocols;
+	char *domain =(char*) malloc(strlen(s.web_domain) + 1);
+	strcpy(domain, s.web_domain);
+	info.vhost_name = domain;
+	// info.vhost_name = MY_DOMAIN;
+	// info.vhost_name = strdup(s.web_domain);
+	info.options =
+		LWS_SERVER_OPTION_HTTP_HEADERS_SECURITY_BEST_PRACTICES_ENFORCE;
+
+#if defined(LWS_WITH_TLS)
+	// default path to letsencrypt certs
+	char ssl_path[256]= "/etc/letsencrypt/live/";
+	char ssl_cert[256], ssl_key[256];
+	// append domain from settings to the path
+	strcat(ssl_path, domain); 
+	strcpy(ssl_cert, ssl_path);
+	strcpy(ssl_key, ssl_path);
+	// default letsencrypt cert and key filenames
+	strcat(ssl_cert, "/fullchain.pem");
+	strcat(ssl_key, "/privkey.pem");
+	
+	// pass ssl info to lws
+	lwsl_user("Server using TLS\n");
+	info.options |= LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
+	info.ssl_cert_filepath = ssl_cert;
+	info.ssl_private_key_filepath = ssl_key;
+#endif
+
+	lws_set_log_level(logs, NULL);
+
+	context = lws_create_context(&info);
+	if (!context) {
+		lwsl_err("lws init failed\n");
+	//	return 1;
+	} else {
+		lwsl_user("LWS init success | visit https://%s:%d\n", info.vhost_name, info.port );
+	}
+
+	server_sock.info = info;
+	server_sock.context = context;
+	server_sock.n = n;
+	server_sock.logs = logs;
+
+	pthread_cond_signal(&start_cond);
+	pthread_mutex_unlock(&binary_sem);
 
 	while (server_sock.n >= 0 && !interrupted)
 		server_sock.n = lws_service(server_sock.context, 0);
@@ -65,78 +124,25 @@ void *start_server_loop(void* argv) {
     return NULL;
 }
 
-int ws_create_thread(char *domain, int port  ) {
+int ws_create_thread(char *domain, int port) {
 	if ( domain == NULL )
 		domain = MY_DOMAIN;
 	if ( port == 0 )
 		port = 3000;
 
-	// create message & mutex lock
-	message_queue = queueCreate();
-	pthread_mutex_init(&binary_sem, NULL);
+	// message_queue = queueCreate(); // delivers bluetooth and websocket messages to scripst
+	// pthread_mutex_init(&binary_sem, NULL); 
 
 	struct ServerOptions s = { domain, port };
 	pthread_t thread_id;
     pthread_create(&thread_id, NULL, &start_server_loop, (void*) &s );   
+    
+	// wait for the server to start
+	pthread_mutex_lock(&binary_sem); 
+	pthread_cond_wait(&start_cond, &binary_sem);	
+	pthread_mutex_unlock(&binary_sem); 
+
     return (int)thread_id; 
-}
-
-Socket start_server()
-{
-    Socket server_sock;
-	struct lws_context_creation_info info;
-	struct lws_context *context;
-	int n = 0, logs = LLL_USER | LLL_ERR | LLL_WARN | LLL_NOTICE
-			/* for LLL_ verbosity above NOTICE to be built into lws,
-			 * lws must have been configured and built with
-			 * -DCMAKE_BUILD_TYPE=DEBUG instead of =RELEASE */
-			/* | LLL_INFO */ /* | LLL_PARSER */ /* | LLL_HEADER */
-			/* | LLL_EXT */ /* | LLL_CLIENT */ /* | LLL_LATENCY */
-			/* | LLL_DEBUG */;
-
-	signal(SIGINT, sigint_handler);
-
-	lws_set_log_level(logs, NULL);
-	lwsl_user("LWS minimal ws server (lws_ring) | visit http://10.0.0.2:7681\n");
-
-	memset(&info, 0, sizeof info); /* otherwise uninitialized garbage */
-	info.port = 3000;
-	info.mounts = &mount;
-	info.protocols = protocols;
-	info.vhost_name = MY_DOMAIN;
-	info.options =
-		LWS_SERVER_OPTION_HTTP_HEADERS_SECURITY_BEST_PRACTICES_ENFORCE;
-
-	#if defined(LWS_WITH_TLS)
-        // get the path to the cert for the given website
-        char ssl_path[256]= "/etc/letsencrypt/live/";
-        char ssl_cert[256], ssl_key[256];
-        // append the domain to the path
-        strcat(ssl_path, MY_DOMAIN); 
-        strcpy(ssl_cert, ssl_path);
-        strcpy(ssl_key, ssl_path);
-        // append the cert and key files
-        strcat(ssl_cert, "/fullchain.pem");
-        strcat(ssl_key, "/privkey.pem");
-        
-        // pass ssl info to lws
-        lwsl_user("Server using TLS\n");
-        info.options |= LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-        info.ssl_cert_filepath = ssl_cert;
-        info.ssl_private_key_filepath = ssl_key;
-	#endif
-
-	context = lws_create_context(&info);
-	if (!context) {
-		lwsl_err("lws init failed\n");
-	//	return 1;
-	}
-
-	server_sock.info = info;
-	server_sock.context = context;
-	server_sock.n = n;
-	server_sock.logs = logs;
-    return server_sock;
 }
 
 vec2 get_motion_data(int idx ) {

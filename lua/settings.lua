@@ -1,68 +1,4 @@
---[[   
-    - Server functions
-        - server.get_connections() - get the # of connected players
-
-        - server.pop()              - get all new messages since the last time this method was called
-            - usage: 
-            ```
-            for i=1, msg_list:size() do
-                msg = msg_list:get(i)   
-                print(msg.type)         -- relevant types are MSG_MOTION_VECTOR, MSG_BTN_A, MSG_BTN_B, MSG_QUIT
-                print(msg.id)           -- index of the player that sent the message
-                print(msg.x, msg.y)     -- motion values for the message
-            ```                 
-
-    - Graphics functions:    
-        - cls(color=TRANSPARENT)
-    
-        - fill_rect( x, y, w, h, color)
-        - draw_rect( x, y, w, h, color, line_width)
-
-        - fill_circle( x, y, r, color )
-        - draw_circle( x, y, r, color, line_width, num_segments )
-        - fill_circle_sector( x, y, r, color, start_angle, end_angle, num_segments )
-
-        - draw_line( x1, y1, x2, y2,  color, line_width)
-
-        - draw_text( text, x, y, font_size, color )
-        - measure_text( text, font_size)
-        
-        - load_texture( file )
-        - draw_texture( texture, x, y, tint=WHITE ) -- ezmode draw a texture
-        - draw_texture_rect( texture, src_rect, dst_rect, angle, tint) -- resize, rotate, crop a texture
-                * src_rect & dst_rect must be tables in this form:
-                    { x=xval, y=yval, w=wval, h=hval }
-
-    - Particle System:
-        - particle_system.new( color, max_speed, acceleration, max_scale, scale_rate )
-            - usage:
-            ```
-            explosion = particle_system.new(RED, 5, 0.05, 3, 0.07)
-            explosion:set(100, 200) -- set spawn position
-            explosion:update(99) -- spawn 99 particles at once
-
-            trail = particle_system.new(BLUE, 0, 0.05, 0, 0.05)
-            
-            t=0
-            function _fixedUpdate() -- gets called at 60 hz
-                t+=0.1
-                
-                trail:set( t, 100 ) -- move the particle trail
-                
-                -- update particle attributes 
-                trail:update(1) -- spawn 60 particles/s 
-                explosion:update(0)
-            end
-
-            function _draw() -- called every frame update
-                explosion:draw()
-                trail:draw()
-            end
-            ```
-
---]]
-
-print(_VERSION)
+print("[LUA] Started ".._VERSION)
 
 -- Debug log options
 LOG_ALL     = 0
@@ -79,6 +15,9 @@ XN_SETTINGS={
 
     SCREEN_WIDTH           = 720,
     SCREEN_HEIGHT          = 480,
+
+    WEBSOCKET_DOMAIN       = "www.studiostudios.net",
+    WEBSOCKET_PORT         = 3000
 }
 
 USER_WEBSOCKET = 0
@@ -126,6 +65,15 @@ for k,v in pairs(math) do
 end
 for k,v in pairs(XN) do 
     _ENV[k]=v 
+end
+
+function server.pop()
+    local msglist = server.pop_unsafe()
+    if not msglist then
+        msglist = {}
+        function msglist:size() return 0 end
+    end
+    return msglist
 end
 
 function cls(c)
@@ -183,6 +131,16 @@ function load_shader(vs, fs)
     return XN.load_shader(vs, fs)
 end
 
+function vec(_x, _y, _z) 
+    local ret = {x=_x, y=_y }
+    if _z then ret.z = _z end
+    return ret
+end
+
+function color(_r, _g, _b, _a )
+    return { r=_r, g=_g, b=_b, a=_a }
+end
+
 function mag2(x,y)
     return x*x+y*y
 end
@@ -227,10 +185,3 @@ end
 function gcmem()
     print(collectgarbage("count"))
 end
-
--- -- userdata float array test
--- a = array.new(1000)
--- print(a)
--- print(a:size())     --> 1000
--- a:set(3.4)
--- print(a:get(10))    --> 3.4

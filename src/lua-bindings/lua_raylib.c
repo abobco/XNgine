@@ -1,4 +1,6 @@
 #include "lua_util.h"
+#include "raymath.h"
+#include "raylib.h"
 
 // Setup canvas (framebuffer) to start drawing 
 int lua_BeginDrawing( lua_State *L ) {
@@ -10,11 +12,6 @@ int lua_EndDrawing( lua_State *L ) {
     EndDrawing();
     return 0;
 }
-// Ends drawing to render texture 
-int lua_EndTextureMode( lua_State *L ) {
-    EndTextureMode();
-    return 0;
-} 
 
 // Returns elapsed time in seconds since InitWindow() 
 int lua_GetTime( lua_State *L ) {
@@ -30,18 +27,59 @@ int lua_DrawFPS( lua_State *L ) {
     return 0;
 } 
 
+// clear active framebuffer to a color
+int lua_clearScreen(lua_State *L) {
+    Color col = lua_getColor(L, 1);
+    
+    ClearBackground(col);
+    return 0;
+}
+
+// --------------------------------- 2D -------------------------------------------------
+
+static Rectangle lua_getRect( lua_State *L, int table_stack_idx) {
+    Rectangle r = {
+        lua_getNumberField(L, "x", table_stack_idx),
+        lua_getNumberField(L, "y", table_stack_idx),
+        lua_getNumberField(L, "w", table_stack_idx),
+        lua_getNumberField(L, "h", table_stack_idx)
+    };
+
+    return r;
+}
+
+// push a texture table to the top of the stack
+static int lua_textureToTable(lua_State *L, Texture2D t) {
+    lua_newtable(L);
+    lua_setIntField(L, "id", t.id);
+    lua_setIntField(L, "width", t.width);
+    lua_setIntField(L, "height", t.height);
+    lua_setIntField(L, "format", t.format);
+    lua_setIntField(L, "mipmaps", t.mipmaps);
+    
+    return 0;
+}
+
+// load image texture from file
+int lua_loadTexture(lua_State *L) {
+    const char *file_name = luaL_checkstring(L,1);
+    lua_textureToTable( L, LoadTexture(file_name) );
+    return 1;
+} 
+
 // convert lua table to texture struct
 static Texture2D lua_getTexture( lua_State *L, int table_stack_idx ) { 
     Texture2D tex = {
-        (int) lua_getNumberField(L, "id", table_stack_idx),
-        (int) lua_getNumberField(L, "width", table_stack_idx),
-        (int) lua_getNumberField(L, "height", table_stack_idx),
-        (int) lua_getNumberField(L, "mipmaps", table_stack_idx),
-        (int) lua_getNumberField(L, "format", table_stack_idx)
+        lua_getNumberField(L, "id", table_stack_idx),
+        lua_getNumberField(L, "width", table_stack_idx),
+        lua_getNumberField(L, "height", table_stack_idx),
+        lua_getNumberField(L, "mipmaps", table_stack_idx),
+        lua_getNumberField(L, "format", table_stack_idx)
     };
     return tex;
 } 
 
+// load a texture that can be used as a render target
 static RenderTexture2D lua_getRenderTexture( lua_State *L, int table_stack_idx ) {
     lua_pushstring(L, "texture");
     lua_gettable(L, table_stack_idx);
@@ -60,22 +98,16 @@ static RenderTexture2D lua_getRenderTexture( lua_State *L, int table_stack_idx )
     return rt;
 }
 
-// push a texture table to the top of the stack
-static int lua_textureToTable(lua_State *L, Texture2D t) {
-    lua_newtable(L);
-    lua_setIntField(L, "id", t.id);
-    lua_setIntField(L, "width", t.width);
-    lua_setIntField(L, "height", t.height);
-    lua_setIntField(L, "format", t.format);
-    lua_setIntField(L, "mipmaps", t.mipmaps);
-    
-    return 0;
-}
-
 // Initializes render texture for drawing 
 int lua_BeginTextureMode( lua_State *L ) {
     RenderTexture2D rt = lua_getRenderTexture(L, 1);
     BeginTextureMode(rt);
+    return 0;
+} 
+
+// Ends drawing to render texture 
+int lua_EndTextureMode( lua_State *L ) {
+    EndTextureMode();
     return 0;
 } 
 
@@ -103,17 +135,6 @@ int lua_LoadRenderTexture( lua_State *L ) {
     return 1;
 } 
 
-static Rectangle lua_getRect( lua_State *L, int table_stack_idx) {
-    Rectangle r = {
-        lua_getNumberField(L, "x", table_stack_idx),
-        lua_getNumberField(L, "y", table_stack_idx),
-        lua_getNumberField(L, "w", table_stack_idx),
-        lua_getNumberField(L, "h", table_stack_idx)
-    };
-
-    return r;
-}
-
 // resize, crop, rotate, tint, & draw texture
 int lua_DrawTexturePro( lua_State *L ) {
     Texture2D t = lua_getTexture(L, 1);
@@ -128,20 +149,7 @@ int lua_DrawTexturePro( lua_State *L ) {
     return 0;
 } 
 
-int lua_loadTexture(lua_State *L) {
-    const char *file_name = luaL_checkstring(L,1);
-    Texture2D t = LoadTexture(file_name);
-
-    lua_newtable(L);
-    lua_setIntField(L, "id", t.id);
-    lua_setIntField(L, "width", t.width);
-    lua_setIntField(L, "height", t.height);
-    lua_setIntField(L, "format", t.format);
-    lua_setIntField(L, "mipmaps", t.mipmaps);
-
-    return 1;
-} 
-
+// move, tint, draw an unscaled, unrotated texture
 int lua_drawTexture(lua_State *L) {
     if ( !lua_istable(L, 1) ) {
         lua_Debug ar;
@@ -214,6 +222,7 @@ int lua_setShaderUniform( lua_State *L ) {
             SetShaderValue(shader, uniformLoc, n, type);
         }
         break;
+        // TODO:
         // case UNIFORM_VEC3:
         // break;
         // case UNIFORM_VEC4:
@@ -253,11 +262,43 @@ int lua_EndShaderMode( lua_State *L ) {
     return 0;
 } 
 
-int lua_clearScreen(lua_State *L) {
-    Color col = lua_getColor(L, 1);
-    
-    ClearBackground(col);
-    return 0;
+Color lua_getColor(lua_State *L, int table_stack_index) {
+    if ( !lua_istable(L, table_stack_index) ) {
+        lua_Debug ar;
+        lua_getstack(L, 1, &ar);
+        lua_getinfo(L, "nSl", &ar);
+        printf("[LUA] Error: %s:%d: invalid color provided: '%s'. Defaulting to magenta\n", ar.short_src, ar.currentline, lua_tostring(L, table_stack_index));
+        return MAGENTA;
+    }
+    return (Color) {
+        lua_checkIntField(L, "r", table_stack_index),
+        lua_checkIntField(L, "g", table_stack_index),
+        lua_checkIntField(L, "b", table_stack_index),
+        lua_checkIntField(L, "a", table_stack_index)
+    };
+}
+
+void lua_setColorField(lua_State *L, int table_stack_index, const char *key, unsigned char value ) {
+    lua_pushstring(L, key);
+    lua_pushnumber(L, (float)value);
+    lua_settable(L, table_stack_index-2);
+}
+
+void lua_setColor(lua_State *L, Color col, const char* name ) {
+    lua_newtable(L);
+    lua_setColorField(L, -1, "r", col.r);
+    lua_setColorField(L, -1, "g", col.g);
+    lua_setColorField(L, -1, "b", col.b);
+    lua_setColorField(L, -1, "a", col.a);
+    if ( name )
+        lua_setglobal(L, name);
+}
+
+void lua_createColorTable(lua_State *L) {
+    for ( int i = 0; i < lua_num_colors; i++ ) {
+        struct ColorInfo col = lua_color_palette[i];
+        lua_setColor(L, col.color, col.name);
+    }
 }
 
 int lua_drawText(lua_State *L) {
@@ -374,43 +415,155 @@ int lua_fillCircle(lua_State *L) {
     return 0;
 }
 
-Color lua_getColor(lua_State *L, int table_stack_index) {
-    if ( !lua_istable(L, table_stack_index) ) {
-        lua_Debug ar;
-        lua_getstack(L, 1, &ar);
-        lua_getinfo(L, "nSl", &ar);
-        printf("[LUA] Error: %s:%d: invalid color provided: '%s'. Defaulting to magenta\n", ar.short_src, ar.currentline, lua_tostring(L, table_stack_index));
-        return MAGENTA;
-    }
-    return (Color) {
-        lua_checkIntField(L, "r", table_stack_index),
-        lua_checkIntField(L, "g", table_stack_index),
-        lua_checkIntField(L, "b", table_stack_index),
-        lua_checkIntField(L, "a", table_stack_index)
-    };
+// --------------------------------- 3D -------------------------------------------------
+
+static Vector3 lua_getVector3( lua_State *L, int table_stack_idx) {
+    Vector3 pos;
+    pos.x = lua_checkFloatField(L, "x", table_stack_idx);
+    pos.y = lua_checkFloatField(L, "y", table_stack_idx);
+    pos.z = lua_checkFloatField(L, "z", table_stack_idx);
+    // printf("%f, %f, %f \n", pos.x, pos.y, pos.z);
+    return pos;
 }
 
-void lua_setColorField(lua_State *L, int table_stack_index, const char *key, unsigned char value ) {
+static Vector3 lua_getVector3Field( lua_State *L, const char *key, int table_stack_idx) {
     lua_pushstring(L, key);
-    lua_pushnumber(L, (float)value);
-    lua_settable(L, table_stack_index-2);
+    lua_gettable(L, table_stack_idx);
+    return lua_getVector3(L, -1);
 }
 
-void lua_setColor(lua_State *L, Color col, const char* name ) {
-    lua_newtable(L);
-    lua_setColorField(L, -1, "r", col.r);
-    lua_setColorField(L, -1, "g", col.g);
-    lua_setColorField(L, -1, "b", col.b);
-    lua_setColorField(L, -1, "a", col.a);
-    if ( name )
-        lua_setglobal(L, name);
+static Camera lua_getCamera( lua_State *L, int table_stack_idx ) {
+    Camera cam;
+    cam.position = lua_getVector3Field(L, "position", 1);
+    cam.target = lua_getVector3Field(L, "target", 1);
+    cam.up = lua_getVector3Field(L, "up", 1);
+    cam.fovy = lua_checkFloatField(L, "fovy", 1);
+    cam.type = lua_checkIntField(L, "type", 1);
+    // printf("%f\n", cam.fovy);
+
+    return cam;
 }
 
-void lua_createColorTable(lua_State *L) {
-    for ( int i = 0; i < lua_num_colors; i++ ) {
-        struct ColorInfo col = lua_color_palette[i];
-        lua_setColor(L, col.color, col.name);
+int lua_testCam(lua_State *L) {
+    lua_getCamera(L, 1);
+    return 0;
+}
+
+int lua_SetCameraMode( lua_State *L ) {
+    Camera cam = lua_getCamera(L, 1);
+    int mode = luaL_checkinteger(L, 2);
+
+    SetCameraMode(cam, mode);
+    return 0;
+}
+
+// Initializes 3D mode with custom camera (3D) 
+int lua_BeginMode3D( lua_State *L ) {
+    Camera cam = lua_getCamera(L, 1);
+    BeginMode3D(cam);
+    return 0;
+} 
+// Ends 3D mode and returns to default 2D orthographic mode 
+int lua_EndMode3D( lua_State *L ) {
+    
+    EndMode3D();
+    return 0;
+} 
+
+int lua_DrawGrid( lua_State *L ) {
+    DrawGrid( luaL_checkinteger(L, 1), luaL_checknumber(L, 2));
+    return 0;
+}
+
+int lua_loadModel( lua_State *L ) {
+    static int model_count = 0;
+    const char *mfile = luaL_checkstring(L, 1);
+
+    Model *models =  get_gamestate()->models;
+    models[model_count] = LoadModel(mfile);
+    printf("%d\n", models[model_count].meshCount);
+    lua_pushinteger(L, model_count++);
+
+    return 1;
+}
+
+int lua_unloadModel( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+
+    XN_GameState *g = get_gamestate();
+    UnloadModel(g->models[id]);
+
+    if ( g->animSet[id].anims != NULL ) {
+        for (int i = 0; i < g->animSet[id].animsCount; i++) 
+            UnloadModelAnimation(g->animSet[id].anims[i]);
+        RL_FREE(g->animSet[id].anims);
     }
+
+    return 0;
+}
+
+int lua_LoadModelMat( lua_State *L ) {
+    int model_id = luaL_checkinteger(L, 1);
+    const char *texfile = luaL_checkstring(L, 2);
+    int mat_id = luaL_checkinteger(L, 3);
+
+    SetMaterialTexture( &get_gamestate()->models[model_id].materials[mat_id], 
+                        MAP_DIFFUSE, LoadTexture(texfile) );
+
+    return 0;
+}
+
+int lua_RotateModelEuler(lua_State *L) {
+    get_gamestate()->models[luaL_checkinteger(L, 1)].transform = 
+        MatrixRotateXYZ( (Vector3) { luaL_checknumber(L,2),
+                                     luaL_checknumber(L,3),
+                                     luaL_checknumber(L,4) });
+    return 0;
+}
+
+int lua_drawModel( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+
+    DrawModelEx(
+        get_gamestate()->models[id], 
+        lua_getVector3(L, 2),
+        lua_getVector3(L, 3),
+        luaL_checknumber(L, 4),
+        lua_getVector3(L, 5),
+        lua_getColor(L, 6)
+    );
+
+    return 0;
+}
+
+int lua_LoadModelAnimations( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    const char *mfile = luaL_checkstring(L, 2);
+
+    get_gamestate()->animSet[id].anims = LoadModelAnimations(mfile, &get_gamestate()->animSet[id].animsCount );
+
+    return 0;
+}
+
+int lua_UpdateModelAnimation( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    int anim_id = luaL_checkinteger(L, 2);
+    int animFrame = luaL_checkinteger(L, 3);
+
+    UpdateModelAnimation( get_gamestate()->models[id], 
+                          get_gamestate()->animSet[id].anims[anim_id], 
+                          animFrame);
+
+    return 0;
+}
+
+int lua_getAnimFrameCount( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    int anim_id = luaL_checkinteger(L, 2);
+
+    lua_pushinteger(L, get_gamestate()->animSet[id].anims[anim_id].frameCount);
+
+    return 1;
 }
 
 // --------------------------------- audio ------------------------------------

@@ -17,7 +17,8 @@
         // used to launch an exe on the remote server through a task
         "remote_exe_filename": "XNgine",
         // "remote_exe_args": "",
-        "remote_exe_args": "../lua/tests/particles.lua",
+        "remote_exe_args": "../lua/tests/3d.lua",
+        // "remote_exe_args": "../lua/tests/particles.lua",
         // "remote_exe_args": "../lua/tests/shaders.lua",
         // "remote_exe_args": "../lua/tests/api_tests.lua",
         // "remote_exe_args": "../lua/tests/gameloop.lua",

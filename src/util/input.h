@@ -50,7 +50,7 @@ typedef struct TerminalInfo {
     char *input;
 } TerminalInfo;
 
-TerminalInfo create_TerminalInfo( char *input_buffer, lua_State *L );
+TerminalInfo create_TerminalInfo( lua_State *L );
 
 void reset_terminal_mode();
 
