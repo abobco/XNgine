@@ -10,9 +10,9 @@ filter = load_shader(nil, "../shaders/glsl100/swirl.fs")
 
 -- vec2 uniform we will set for the shader to make the swirl follow a cursor
 swirl_unif = get_uniform_loc(filter, "center")
-cursor = { x=XN_SETTINGS.SCREEN_WIDTH/2, y=XN_SETTINGS.SCREEN_HEIGHT/2 }
+cursor = vec(screen_center.x, screen_center.y)
 
-circle_pos = { x=150, y=400 } -- circle we will move in the physics loop
+circle_pos = vec(150, 400) -- circle we will move in the physics loop
 
 -- _fixedUpdate() is called at 60 hz
 function _fixedUpdate()
@@ -25,7 +25,7 @@ function _draw()
     
     set_uniform( -- send updated cursor position to the gpu
         filter, swirl_unif, 
-        { x = cursor.x, y = XN_SETTINGS.SCREEN_HEIGHT - cursor.y }, -- flip y axis for opengl
+        vec(cursor.x, XN_SETTINGS.SCREEN_HEIGHT - cursor.y), -- flip y axis for opengl
         UNIFORM_VEC2 
     )
 

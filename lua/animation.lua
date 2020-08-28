@@ -17,12 +17,12 @@ screen_saver = {
         reset_interval = 1,
         last_reset = 0,
         pois = {    -- points of interest (origin pts for the camera)
-            { x = -0.348827, y =  0.607167 },
-            { x = -0.786268, y =  0.169728 },
-            { x = -0.8,      y =  0.156 },
-            { x = 0.285,     y =  0.0 },
-            { x = -0.835,    y = -0.2321 },
-            { x = -0.70176,  y = -0.3842 }, 
+            vec(-0.348827,  0.607167 ),
+            vec(-0.786268,  0.169728 ),
+            vec(-0.8,       0.156 ),
+            vec(0.285,      0.0 ),
+            vec(-0.835,    -0.2321 ),
+            vec(-0.70176,  -0.3842 )
         },
         c = {}, -- current point of interest
     }

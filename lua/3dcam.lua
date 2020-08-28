@@ -9,11 +9,10 @@ CAMERA_ORBITAL = 2
 CAMERA_FIRST_PERSON = 3
 CAMERA_THIRD_PERSON = 4
 
--- metaclass
 Camera = {
-    position={x=10, y=10, z=10},
-    target={x=0, y=0, z=0},
-    up={x=0, y=1, z=0},
+    position=vec(10, 10, 10),
+    target=vec(0, 0, 0),
+    up=vec(0, 1, 0),
     fovy = 45,
     type=0
 }
