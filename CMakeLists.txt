@@ -133,7 +133,8 @@ macro(XN_Build project_name src_file)
   # cross compiler stuff
   set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
   set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "./")
-  target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn profiler)
+  target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn )
+  # target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn profiler)
 endmacro()
 
 XN_Build( XNgine src/main.c )

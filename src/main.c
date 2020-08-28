@@ -13,8 +13,6 @@
 #include <termios.h>
 #include <fcntl.h> 
 #include <sys/wait.h>
-
-#include "gperftools/profiler.h"
 #include "lua-bindings/lua_util.h"
 
 #include "util/bob_math.h"
@@ -34,6 +32,9 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+
+// #include "gperftools/profiler.h"
 
 int main(int argc, const char **argv)
 {
