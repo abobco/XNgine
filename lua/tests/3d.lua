@@ -7,7 +7,7 @@ interval = 1/60
 animFrame = 0
 
 cam = Camera:new( vec(0, 15,  0),     -- position
-                  vec(0,  0,  0),      -- target
+                  vec(0,  0,  0),     -- target
                   vec(0,  0, -1) )    -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
 
