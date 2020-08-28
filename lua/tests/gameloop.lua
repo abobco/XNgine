@@ -9,7 +9,7 @@ filter = load_shader(nil, "../shaders/glsl100/swirl.fs")
 
 swirl_unif = get_uniform_loc(filter, "center")
 print(swirl_unif)
-cursor = { x=XN_SETTINGS.SCREEN_WIDTH/2, y=XN_SETTINGS.SCREEN_HEIGHT/2 }
+cursor = vec(screen_center.x, screen_center.y)
 
 time = 0
 interval = 1/60
@@ -27,7 +27,6 @@ while ( true ) do
         lag -= interval
     end
     
-    cursor = get_cursor_pos(0)
     set_uniform( 
         filter, swirl_unif, 
         {x = cursor.x, y=XN_SETTINGS.SCREEN_HEIGHT-cursor.y }, -- flip y axis for opengl

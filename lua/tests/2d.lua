@@ -21,7 +21,6 @@ end
 
 -- _draw() is called once every frame update
 function _draw()
-    cursor = get_cursor_pos(0)  -- get player 1's cursor position from the server  
     
     set_uniform( -- send updated cursor position to the gpu
         filter, swirl_unif, 

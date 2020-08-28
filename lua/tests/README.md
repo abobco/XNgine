@@ -8,7 +8,7 @@
  
  ## settings
 
-Edit the XN_SETTINGS table in [settings.lua](../settings.lua). This file is run on the lua VM before the window is created and the user lua script is loaded
+Edit the `XN_SETTINGS` table in [settings.lua](../settings.lua). This file is run on the lua VM before the window is created and the user lua script is loaded
 
 ## graphics:  
 
@@ -76,7 +76,7 @@ end_drawing()
 * get events from a global message queue 
 * `server.get_connections()` - get the # of connected players
 * `server.pop()` - returns a `MessageList` of events since the last time this was called
-* `MessageList:size()` - returns # of messages in list
+* `MessageList:size()` - get # of messages in list
 * `MessageList:get(i)` - get a table with data from message `i`
 * Example:
 ```lua

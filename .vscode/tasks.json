@@ -20,8 +20,8 @@
         // "remote_exe_args": "../lua/tests/3d.lua",
         // "remote_exe_args": "../lua/tests/2d.lua",
         // "remote_exe_args": "../lua/tests/particles.lua",
-        // "remote_exe_args": "../lua/tests/shaders.lua",
-        "remote_exe_args": "../lua/tests/gameloop.lua",
+        "remote_exe_args": "../lua/tests/shaders.lua",
+        // "remote_exe_args": "../lua/tests/gameloop.lua",
 
         // if the project has too many folders, winscp's file-sync won't work properly, so
         // you can set exclude patterns here
