@@ -8,6 +8,12 @@
 #define MY_DOMAIN "www.studiostudios.net"
 #define MY_MOUNT "../client"
 
+void set_interrupt(int i) { 
+	pthread_mutex_lock(&binary_sem);
+	interrupted = true; 
+	pthread_mutex_unlock(&binary_sem);
+}
+
 static struct lws_protocols protocols[] = {
 	{ "http", lws_callback_http_dummy, 0, 0 },
 	LWS_PLUGIN_PROTOCOL_MINIMAL,
@@ -69,8 +75,6 @@ void *start_server_loop(void* argv) {
 	char *domain =(char*) malloc(strlen(s.web_domain) + 1);
 	strcpy(domain, s.web_domain);
 	info.vhost_name = domain;
-	// info.vhost_name = MY_DOMAIN;
-	// info.vhost_name = strdup(s.web_domain);
 	info.options =
 		LWS_SERVER_OPTION_HTTP_HEADERS_SECURITY_BEST_PRACTICES_ENFORCE;
 
@@ -98,11 +102,12 @@ void *start_server_loop(void* argv) {
 	context = lws_create_context(&info);
 	if (!context) {
 		lwsl_err("lws init failed\n");
-	//	return 1;
-	} else {
-		lwsl_user("LWS init success | visit https://%s:%d\n", info.vhost_name, info.port );
+		pthread_cond_signal(&start_cond);
+		pthread_mutex_unlock(&binary_sem);
+		return NULL;
 	}
 
+	lwsl_user("LWS init success | visit https://%s:%d\n", info.vhost_name, info.port );
 	server_sock.info = info;
 	server_sock.context = context;
 	server_sock.n = n;
@@ -116,11 +121,6 @@ void *start_server_loop(void* argv) {
 
 	printf("destroying context\n");
 	lws_context_destroy(server_sock.context);  // close websocket context
-
-	printf("destroying queue\n");
-	queueDestroy(message_queue);
-	printf("queue destroyed\n");
-	pthread_mutex_destroy(&binary_sem);
     return NULL;
 }
 

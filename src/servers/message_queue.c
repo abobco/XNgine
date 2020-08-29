@@ -12,6 +12,11 @@ void init_msg_q() {
 	pthread_mutex_init(&binary_sem, NULL);
 }
 
+void destroy_msg_q() {
+    queueDestroy(message_queue);
+    pthread_mutex_destroy(&binary_sem);
+}
+
 int get_message_queue_size() {
 	return message_queue->length;
 }

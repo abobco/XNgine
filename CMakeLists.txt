@@ -33,8 +33,6 @@ if (NOT raylib_FOUND)
   endif()
 endif()
 
-# =======================================================================================
-
 # ========================== Build libwebsockets ========================================
 
 project(lws)
@@ -67,36 +65,6 @@ FetchContent_Declare(
 
 # =======================================================================================
 
-# =============================== Build the darn game ===================================
-
-# project(XNgine)
-
-# # build a debug symbol table for gdb
-# set(CMAKE_BUILD_TYPE Debug)
-
-# # build helper fn library
-# set( xnlib  src/util/bob_math.c src/util/collisions.c )
-# list(APPEND xnlib src/servers/message_queue.c src/util/input.c src/servers/bt/gamepad_server.c) 
-# list(APPEND xnlib src/graphics/particles.c src/graphics/renderer.c)
-# set( lb src/lua-bindings )
-# list(APPEND xnlib ${lb}/lua_util.c ${lb}/lua_raylib.c ${lb}/lua_server.c ${lb}/lua_particles.c )
-
-# add_library(${PROJECT_NAME}-fn SHARED ${xnlib})
-
-# # build game
-# add_executable(${PROJECT_NAME}  src/main.c)
-
-# # include_directories(build/_deps/libwebsockets-build/include ${raylib_BINARY_DIR}/src ${CMAKE_SYSROOT}/usr/include/lua5.1) # default raspi lua build
-# include_directories(build/_deps/libwebsockets-build/include ${raylib_BINARY_DIR}/src build/_deps/lua-5.4.0/install/include) # compound assignment lua5.4 build
-# find_library( LUA54 NAMES "lua" PATHS ${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/lua-5.4.0/install/lib NO_DEFAULT_PATH)
-
-# # cross compiler stuff
-# set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-# set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "./")
-# target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} ${PROJECT_NAME}-fn profiler)
-
-# # =======================================================================================
-
 # ================================ Helper Library ========================================
 
 project(XNlib)
@@ -111,7 +79,6 @@ list(APPEND xnlib ${lb}/lua_util.c ${lb}/lua_raylib.c ${lb}/lua_server.c ${lb}/l
 link_directories(build/_deps/raylib-build/src)
 
 add_library(xnlib-fn STATIC ${xnlib} )
-
 
 # ========================================================================================
 

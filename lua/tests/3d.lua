@@ -44,7 +44,7 @@ function _draw()
     
     begin_3d_mode(cam)
 
-    draw_grid(16, 1)
+    draw_grid(20, 1)
 
     draw_model( xab,
                 { x=0, y=2, z=0 },  

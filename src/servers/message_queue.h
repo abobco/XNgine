@@ -74,6 +74,7 @@ void add_connection();
 int get_connections();
 void enq_msg(Message msg);
 void init_msg_q();
+void destroy_msg_q();
 // ------------------------------------------------------------------------
 
 /* standard linked list element */

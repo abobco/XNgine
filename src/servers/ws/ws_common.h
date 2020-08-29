@@ -16,6 +16,8 @@ extern "C" {
 
 static int interrupted;
 
+void set_interrupt(int i);
+
 typedef struct Socket {
     struct lws_context_creation_info info;
     struct lws_context *context;
