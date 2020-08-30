@@ -78,3 +78,33 @@ int lua_EndMode3D( lua_State *L ) {
     EndMode3D();
     return 0;
 } 
+// Draw sphere wires 
+int lua_DrawSphereWires( lua_State *L ) {
+    DrawSphereWires();
+    return 0;
+} 
+// Draw sphere 
+int lua_DrawSphere( lua_State *L ) {
+    DrawSphere();
+    return 0;
+} 
+// Draw cube textured 
+int lua_DrawCubeTexture( lua_State *L ) {
+    DrawCubeTexture();
+    return 0;
+} 
+// Draw cube wires (Vector version) 
+int lua_DrawCubeWiresV( lua_State *L ) {
+    DrawCubeWiresV();
+    return 0;
+} 
+// Draw cube (Vector version) 
+int lua_DrawCubeV( lua_State *L ) {
+    DrawCubeV();
+    return 0;
+} 
+// Draw a model wires (with texture if set) 
+int lua_DrawModelWires( lua_State *L ) {
+    DrawModelWires();
+    return 0;
+} 

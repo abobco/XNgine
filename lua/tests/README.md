@@ -51,10 +51,15 @@ set_uniform( shader, uniform_loc, uniform_value, uniform_type ) -- types listed 
 
 -- 3d
 -- NOTE: Camera constructor in lua/3dcam.lua
-set_camera_mode( camera, mode ) -- orthographic/perspective
+set_camera_mode( camera, mode ) -- set projection mode
 begin_3d_mode( camera ) 
 end_3d_mode()
 draw_grid( slices, spacing ) -- grid on a plane centered at (0,0,0)
+draw_sphere( position, radius, color )
+draw_sphere_wires( position, radius, rings, slices, color )
+draw_cube( position, scale, color )
+draw_cube_wires( position, scale, color )
+draw_cube_texture( texture, position, scale, tint )
 load_model( filepath ) -- .iqm model file --> model logical object
 unload_model( model )  -- free model/animation memory
 load_animations( model, filepath )  -- load animations from a .iqm file into a model

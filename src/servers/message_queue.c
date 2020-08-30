@@ -36,8 +36,6 @@ int insert_id( void *id ) {
     for ( int i =0; i <  MAX_CONNECTIONS + 4; i++ ) {
         if ( connection_ids_new[i] == NULL ) {
             connection_ids_new[i] = id;
-            // if ( i >= num_connections)
-            //     num_connections++;
             index = i;
             break;
         }

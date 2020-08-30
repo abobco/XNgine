@@ -158,11 +158,17 @@ int lua_SetCameraMode( lua_State *L );
 int lua_loadModel( lua_State *L );
 int lua_unloadModel( lua_State *L );
 int lua_drawModel( lua_State *L );
+int lua_DrawModelWires( lua_State *L ); // Draw a model wires (with texture if set) 
 int lua_LoadModelMat( lua_State *L );
 int lua_LoadModelAnimations( lua_State *L );
 int lua_UpdateModelAnimation( lua_State *L );
 int lua_getAnimFrameCount( lua_State *L );
 int lua_RotateModelEuler(lua_State *L);
+int lua_DrawSphereWires( lua_State *L ); // Draw sphere wires 
+int lua_DrawSphere( lua_State *L ); // Draw sphere 
+int lua_DrawCubeTexture( lua_State *L ); // Draw cube textured 
+int lua_DrawCubeWiresV( lua_State *L ); // Draw cube wires (Vector version) 
+int lua_DrawCubeV( lua_State *L ); // Draw cube (Vector version) 
 
 // define lua host libraries
 static const struct luaL_Reg lua_server_f[] = {
@@ -232,6 +238,7 @@ static const struct luaL_Reg lua_raylib[] = {
 	{ "end_3d_mode", lua_EndMode3D },
 	{ "load_model", lua_loadModel },
 	{ "draw_model", lua_drawModel },
+    { "draw_model_wires", lua_DrawModelWires },
 	{ "unload_model", lua_unloadModel },
 	{ "load_model_mat", lua_LoadModelMat },
 	{ "load_animations", lua_LoadModelAnimations },
@@ -239,6 +246,11 @@ static const struct luaL_Reg lua_raylib[] = {
 	{ "get_animation_frame_count", lua_getAnimFrameCount },
 	{ "model_rotate_euler", lua_RotateModelEuler },
 	{ "draw_grid", lua_DrawGrid },
+    { "draw_sphere_wires", lua_DrawSphereWires },
+	{ "draw_sphere", lua_DrawSphere },
+    { "draw_cube_texture", lua_DrawCubeTexture },
+	{ "draw_cube_wires", lua_DrawCubeWiresV },
+	{ "draw_cube", lua_DrawCubeV },
     {0,0}   // terminator 
 };
 

@@ -521,10 +521,9 @@ int lua_RotateModelEuler(lua_State *L) {
     return 0;
 }
 
-int lua_drawModel( lua_State *L ) {
+static void draw_model_generic( lua_State *L, void (*func) (Model, Vector3, Vector3, float, Vector3, Color) ) {
     int id = luaL_checkinteger(L, 1);
-
-    DrawModelEx(
+    (*func) (
         get_gamestate()->models[id], 
         lua_getVector3(L, 2),
         lua_getVector3(L, 3),
@@ -532,9 +531,20 @@ int lua_drawModel( lua_State *L ) {
         lua_getVector3(L, 5),
         lua_getColor(L, 6)
     );
+}
 
+
+// Draw a model with texture if set
+int lua_drawModel( lua_State *L ) {
+    draw_model_generic(L, &DrawModelEx);
     return 0;
 }
+
+// Draw a model wires (with texture if set) 
+int lua_DrawModelWires( lua_State *L ) {
+    draw_model_generic(L, &DrawModelWiresEx);
+    return 0;
+} 
 
 int lua_LoadModelAnimations( lua_State *L ) {
     int id = luaL_checkinteger(L, 1);
@@ -565,6 +575,55 @@ int lua_getAnimFrameCount( lua_State *L ) {
 
     return 1;
 }
+
+// Draw sphere wires 
+int lua_DrawSphereWires( lua_State *L ) {
+    Vector3 cen = lua_getVector3(L, 1);
+    float r = luaL_checknumber(L, 2);
+    int rings = luaL_checkinteger(L, 3);
+    int slices = luaL_checkinteger(L, 4);
+    Color col = lua_getColor(L, 5);
+
+    DrawSphereWires(cen, r, rings, slices, col);
+    return 0;
+} 
+// Draw sphere 
+int lua_DrawSphere( lua_State *L ) {
+    Vector3 cen = lua_getVector3(L, 1);
+    float r = luaL_checknumber(L, 2);
+    Color col = lua_getColor(L, 3);
+
+    DrawSphere(cen, r, col);
+    return 0;
+} 
+
+static void draw_cube_generic( lua_State *L, void (*func) (Vector3, Vector3, Color) ) {
+    Vector3 pos = lua_getVector3(L, 1);
+    Vector3 size = lua_getVector3(L, 2);
+    Color col = lua_getColor(L, 3);
+    (*func)(pos, size, col);
+}
+
+// Draw cube wires (Vector version) 
+int lua_DrawCubeWiresV( lua_State *L ) {
+    draw_cube_generic(L, DrawCubeWiresV );
+    return 0;
+} 
+// Draw cube (Vector version) 
+int lua_DrawCubeV( lua_State *L ) {
+    draw_cube_generic(L, DrawCubeV );
+    return 0;
+} 
+
+// Draw cube textured 
+int lua_DrawCubeTexture( lua_State *L ) {
+    Texture2D tex = lua_getTexture(L, 1);
+    Vector3 pos = lua_getVector3(L, 2);
+    Vector3 size = lua_getVector3(L, 3);
+    Color col = lua_getColor(L, 4);
+    DrawCubeTexture(tex, pos, size.x, size.y, size.z, col);
+    return 0;
+} 
 
 // --------------------------------- audio ------------------------------------
 

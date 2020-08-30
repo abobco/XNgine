@@ -14,6 +14,12 @@ int lua_DrawRectanglePro( lua_State *L ); // Draw a color-filled rectangle with 
 int lua_DrawTriangle( lua_State *L ); // Draw a color-filled triangle (vertex in counter-clockwise order!) 
 int lua_BeginMode3D( lua_State *L ); // Initializes 3D mode with custom camera (3D) 
 int lua_EndMode3D( lua_State *L ); // Ends 3D mode and returns to default 2D orthographic mode 
+int lua_DrawSphereWires( lua_State *L ); // Draw sphere wires 
+int lua_DrawSphere( lua_State *L ); // Draw sphere 
+int lua_DrawCubeTexture( lua_State *L ); // Draw cube textured 
+int lua_DrawCubeWiresV( lua_State *L ); // Draw cube wires (Vector version) 
+int lua_DrawCubeV( lua_State *L ); // Draw cube (Vector version) 
+int lua_DrawModelWires( lua_State *L ); // Draw a model wires (with texture if set) 
 
 static const struct luaL_Reg bindings[] = {
 	{ "begin_drawing", lua_BeginDrawing },
@@ -32,5 +38,11 @@ static const struct luaL_Reg bindings[] = {
 	{ "draw_triangle", lua_DrawTriangle },
 	{ "begin_mode3_d", lua_BeginMode3D },
 	{ "end_mode3_d", lua_EndMode3D },
+	{ "draw_sphere_wires", lua_DrawSphereWires },
+	{ "draw_sphere", lua_DrawSphere },
+	{ "draw_cube_texture", lua_DrawCubeTexture },
+	{ "draw_cube_wires_v", lua_DrawCubeWiresV },
+	{ "draw_cube_v", lua_DrawCubeV },
+	{ "draw_model_wires", lua_DrawModelWires },
 	{0,0}	// terminator
 };
