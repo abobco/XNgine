@@ -147,3 +147,82 @@ int convex_poly_circle_collision(Vector2 *a, int a_n, Vector2 b_cen, float radiu
 
     return res;
 }
+
+bool point_in_AABB( Vector3 p, BoundingBox b ) {
+    if ( p.x > b.min.x && p.y > b.min.y && p.z > b.min.z 
+      && p.x < b.max.x && p.y < b.max.y && p.z < b.max.z )
+      return true;
+    return false;
+}
+
+Vector3 transform_point( Vector3 point, Transform t ) {
+    Vector3 scratch = Vector3Multiply(point, t.scale);
+    scratch = Vector3RotateByQuaternion(scratch, t.rotation);
+    return Vector3Add(point, scratch);
+}
+
+Vector3 inv_transform_point( Vector3 point, Transform t ) {
+    Vector3 scratch = Vector3Subtract(point, t.translation);
+    scratch = Vector3RotateByQuaternion(scratch, QuaternionInvert(t.rotation));
+    return Vector3Multiply( scratch, (Vector3) { 1/t.scale.x, 1/t.scale.y, 1/t.scale.z } );
+}
+
+static void clamp_to_bound(float *m, Vector3 *b, Vector3 *d ) {
+    float minval = *m;
+    Vector3 bound = *b;
+    Vector3 disp = *d;
+    if ( fabs(bound.x) < minval )  {
+        minval = fabs(bound.x);
+        disp = (Vector3) { bound.x, 0, 0 };
+    }
+    if ( fabs(bound.y) < minval )  {
+        minval = fabs(bound.y);
+        disp = (Vector3) { 0, bound.y, 0 };
+    }
+    if ( fabs(bound.z) < minval )  {
+        minval = fabs(bound.z);
+        disp = (Vector3) { 0, 0, bound.z };
+    }
+    *m = minval; *d = disp;
+}
+
+// returns a displacement vector for the collision
+Vector3 collision_AABB_sphere( Transform box, Vector3 cen, float r ) {
+    box.scale = Vector3Scale(box.scale, 0.5);
+    Vector3 local_sphere_cen = inv_transform_point( cen, box );
+
+    BoundingBox bb = {
+        (Vector3){-1,-1,-1},
+        (Vector3){1,1,1},
+    };
+
+    Vector3 closest = {
+        Clamp( local_sphere_cen.x, bb.min.x, bb.max.x ),
+        Clamp( local_sphere_cen.y, bb.min.y, bb.max.y ),
+        Clamp( local_sphere_cen.z, bb.min.z, bb.max.z )
+    };
+
+    if ( point_in_AABB(local_sphere_cen, bb) ) {
+        // clamp sphere center to nearest box face
+        Vector3 tomax = Vector3Subtract(bb.max, local_sphere_cen );
+        Vector3 tomin = Vector3Subtract(bb.min, local_sphere_cen );
+        float minval = FLT_MAX;
+        Vector3 disp = { 0, 0, 0 };
+        clamp_to_bound( &minval, &tomax, &disp ); 
+        clamp_to_bound( &minval, &tomin, &disp ); 
+
+        // add sphere radius
+        Vector3 pen = Vector3Subtract(local_sphere_cen, disp);
+        pen = Vector3Scale( Vector3Normalize(pen), (r+Vector3Length(pen)));
+        return pen;
+    }
+
+    Vector3 offset = Vector3Subtract(local_sphere_cen, closest);
+    float d = Vector3Length(offset);
+    if ( d > r )
+        return (Vector3) {0,0,0};
+    
+    print_vec(offset);
+    Vector3 glob = transform_point( Vector3Scale( Vector3Normalize(offset), (r - d)), box );
+    return glob;
+}

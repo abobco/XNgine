@@ -20,6 +20,9 @@ int lua_DrawCubeTexture( lua_State *L ); // Draw cube textured
 int lua_DrawCubeWiresV( lua_State *L ); // Draw cube wires (Vector version) 
 int lua_DrawCubeV( lua_State *L ); // Draw cube (Vector version) 
 int lua_DrawModelWires( lua_State *L ); // Draw a model wires (with texture if set) 
+int lua_collision_AABB_sphere( lua_State *L ); // returns a displacement vector for the collision in world space 
+int lua_GenMeshCube( lua_State *L ); // Generate cuboid mesh 
+int lua_LoadModelFromMesh( lua_State *L ); // Load model from generated mesh (default material) 
 
 static const struct luaL_Reg bindings[] = {
 	{ "begin_drawing", lua_BeginDrawing },
@@ -44,5 +47,8 @@ static const struct luaL_Reg bindings[] = {
 	{ "draw_cube_wires_v", lua_DrawCubeWiresV },
 	{ "draw_cube_v", lua_DrawCubeV },
 	{ "draw_model_wires", lua_DrawModelWires },
+	{ "collision__a_a_b_b_sphere", lua_collision_AABB_sphere },
+	{ "gen_mesh_cube", lua_GenMeshCube },
+	{ "load_model_from_mesh", lua_LoadModelFromMesh },
 	{0,0}	// terminator
 };

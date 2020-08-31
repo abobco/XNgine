@@ -1,6 +1,6 @@
 -- 2d sdf, swirl post processing shader 
 
-dofile("../lua/ui.lua")
+dofile("../lua/util/ui.lua")
 -- create render-texture matching the screen dims
 fb = load_render_texture( screen.x, screen.y )
 filter = load_shader(nil, "../shaders/sdf.fs") -- load shader

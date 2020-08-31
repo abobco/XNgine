@@ -23,7 +23,7 @@ int lua_get_connected(lua_State *L) {
 int lua_getMotionData(lua_State *L) {
     int player_index = luaL_checkinteger(L, 1);
 
-    vec2 result = get_motion_data(player_index);
+    vec3 result = get_motion_data(player_index);
     
     lua_pushnumber(L, result.x);
     lua_pushnumber(L, result.y);
@@ -82,6 +82,7 @@ int lua_getMessageValue (lua_State *L) {
     lua_setIntField(L, "user_type", m.user_type);
     lua_setFloatField(L, "x", m.motion.x);
     lua_setFloatField(L, "y", m.motion.y);
+    lua_setFloatField(L, "z", m.motion.z);
 
     return 1;
 }

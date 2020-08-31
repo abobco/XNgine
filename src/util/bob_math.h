@@ -13,6 +13,8 @@ extern "C" {
 
 #define EPSILON 1e-4    // I should probably be getting this value from the compiler but lazy
 
+#define print_vec(a) printf("%s = (%f, %f, %f)\n", #a, a.x, a.y, a.z );
+
 float rand_float();
 
 float lerp(float a, float b, float t);
@@ -37,7 +39,11 @@ int convex_poly_circle_collision(Vector2 *a, int a_n, Vector2 b_cen, float radiu
 
 float perlin2d(float x, float y, float freq, int depth);
 
-int check_all_collisions();
+Vector3 transform_point( Vector3 point, Transform t );
+
+Vector3 inv_transform_point( Vector3 point, Transform t );
+
+Vector3 collision_AABB_sphere( Transform box, Vector3 cen, float r ); // returns a displacement vector for the collision in world space
 
 #ifdef __cplusplus
 }

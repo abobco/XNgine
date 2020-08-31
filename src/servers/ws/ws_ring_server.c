@@ -145,7 +145,7 @@ int ws_create_thread(char *domain, int port) {
     return (int)thread_id; 
 }
 
-vec2 get_motion_data(int idx ) {
+vec3 get_motion_data(int idx ) {
 	return motion_msg[idx];
 }
 

@@ -13,8 +13,8 @@ let MSG_DISCONNECT = -1,
 
 // subtract this from the rotation sent to the server
 // set when the user presses the calibrate-button
-let current_pos = {x:0, y:0};
-let offset = {x:180, y:0};
+let current_pos = {x:0, y:0, z:0};
+let offset = {x:180, y:0, z:0};
 let prev_rot = {beta:0, gamma:0, alpha:0};
 
 let derived_rot = {x:1, y:0, z:0, w:0};
@@ -154,14 +154,17 @@ function motion_setup(ws) {
         // if ( Math.abs(event.beta - prev_rot.beta) > 20 )
         //     offset.y += (event.beta - prev_rot.beta);
         let y = event.beta;
+        let z = event.gamma;
         // if ( y > 180) y -= 360;
         // if (y < -180) y += 360;
         current_pos.x = x;
         current_pos.y = y;
+        current_pos.z = z;
 
         // subtract calibration offset
         x -= offset.x;
         y -= offset.y; 
+        z -= offset.z;
         
         if ( x > 180 )
             x -= 360;
@@ -176,7 +179,7 @@ function motion_setup(ws) {
         document.getElementById('y').innerHTML = Math.round(y); 
 
         // make a byte buffer to send the data
-        let buffer = new ArrayBuffer(16);
+        let buffer = new ArrayBuffer(20);
         let typed_array = new Int32Array(buffer);
         
         // convert floats to ints
@@ -185,6 +188,7 @@ function motion_setup(ws) {
         typed_array[1] = player;
         typed_array[2] = Math.round(x*conv_factor);
         typed_array[3] = Math.round(y*conv_factor);
+        typed_array[4] = Math.round(z*conv_factor);
         
         // typed_array[2] = Math.round(-(derived_rot.z - offset.x)*conv_factor*2);
         // typed_array[3] = Math.round(-(derived_rot.x - offset.y)*conv_factor*2);
@@ -309,6 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
         calibrate_btn.addEventListener('click', () => {
             offset.x = current_pos.x;
             offset.y = current_pos.y;
+            offset.z = current_pos.z;
 
             // offset.x = derived_rot.z;
             // offset.y = derived_rot.x;

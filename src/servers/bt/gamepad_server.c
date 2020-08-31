@@ -195,7 +195,7 @@ void* joystick_event_thread(void *argv) {
 				0.0f,
 				id,
 				USER_GAMEPAD,
-				(vec2) { 0, 0 },      			
+				(vec3) { 0, 0, 0 },      			
 				// NULL            			
 	};
 	while (!gamepad_thread_interrupted) {

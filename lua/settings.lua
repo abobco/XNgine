@@ -134,11 +134,20 @@ function load_shader(vs, fs)
     return XN.load_shader(vs, fs)
 end
 
-function vec(_x, _y, _z) 
+function vec(_x, _y, _z, _w) 
     local ret = {x=_x, y=_y }
     if _z then ret.z = _z end
+    if _w then ret.w = _w end
     return ret
 end
+
+function vec_add(a, b)
+    local ret = vec(a.x + b.x, a.y + b.y)
+    if a.z and b.z then
+        ret.z = a.z + b.z
+    end
+    return ret
+end 
 
 function color(_r, _g, _b, _a )
     return { r=_r, g=_g, b=_b, a=_a }

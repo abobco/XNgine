@@ -417,7 +417,7 @@ int lua_fillCircle(lua_State *L) {
 
 // --------------------------------- 3D -------------------------------------------------
 
-static Vector3 lua_getVector3( lua_State *L, int table_stack_idx) {
+Vector3 lua_getVector3( lua_State *L, int table_stack_idx) {
     Vector3 pos;
     pos.x = lua_checkFloatField(L, "x", table_stack_idx);
     pos.y = lua_checkFloatField(L, "y", table_stack_idx);
@@ -426,7 +426,7 @@ static Vector3 lua_getVector3( lua_State *L, int table_stack_idx) {
     return pos;
 }
 
-static Vector3 lua_getVector3Field( lua_State *L, const char *key, int table_stack_idx) {
+Vector3 lua_getVector3Field( lua_State *L, const char *key, int table_stack_idx) {
     lua_pushstring(L, key);
     lua_gettable(L, table_stack_idx);
     return lua_getVector3(L, -1);
@@ -476,13 +476,12 @@ int lua_DrawGrid( lua_State *L ) {
 }
 
 int lua_loadModel( lua_State *L ) {
-    static int model_count = 0;
     const char *mfile = luaL_checkstring(L, 1);
 
-    Model *models =  get_gamestate()->models;
-    models[model_count] = LoadModel(mfile);
-    printf("%d\n", models[model_count].meshCount);
-    lua_pushinteger(L, model_count++);
+    ModelSet *m =  &get_gamestate()->modelSet;
+    m->models[m->count] = LoadModel(mfile);
+    printf("model loaded with %d meshes\n", m->models[m->count].meshCount);
+    lua_pushinteger(L, m->count++);
 
     return 1;
 }
@@ -491,7 +490,7 @@ int lua_unloadModel( lua_State *L ) {
     int id = luaL_checkinteger(L, 1);
 
     XN_GameState *g = get_gamestate();
-    UnloadModel(g->models[id]);
+    UnloadModel(g->modelSet.models[id]);
 
     if ( g->animSet[id].anims != NULL ) {
         for (int i = 0; i < g->animSet[id].animsCount; i++) 
@@ -507,14 +506,14 @@ int lua_LoadModelMat( lua_State *L ) {
     const char *texfile = luaL_checkstring(L, 2);
     int mat_id = luaL_checkinteger(L, 3);
 
-    SetMaterialTexture( &get_gamestate()->models[model_id].materials[mat_id], 
+    SetMaterialTexture( &get_gamestate()->modelSet.models[model_id].materials[mat_id], 
                         MAP_DIFFUSE, LoadTexture(texfile) );
 
     return 0;
 }
 
 int lua_RotateModelEuler(lua_State *L) {
-    get_gamestate()->models[luaL_checkinteger(L, 1)].transform = 
+    get_gamestate()->modelSet.models[luaL_checkinteger(L, 1)].transform = 
         MatrixRotateXYZ( (Vector3) { luaL_checknumber(L,2),
                                      luaL_checknumber(L,3),
                                      luaL_checknumber(L,4) });
@@ -524,7 +523,7 @@ int lua_RotateModelEuler(lua_State *L) {
 static void draw_model_generic( lua_State *L, void (*func) (Model, Vector3, Vector3, float, Vector3, Color) ) {
     int id = luaL_checkinteger(L, 1);
     (*func) (
-        get_gamestate()->models[id], 
+        get_gamestate()->modelSet.models[id], 
         lua_getVector3(L, 2),
         lua_getVector3(L, 3),
         luaL_checknumber(L, 4),
@@ -560,7 +559,7 @@ int lua_UpdateModelAnimation( lua_State *L ) {
     int anim_id = luaL_checkinteger(L, 2);
     int animFrame = luaL_checkinteger(L, 3);
 
-    UpdateModelAnimation( get_gamestate()->models[id], 
+    UpdateModelAnimation( get_gamestate()->modelSet.models[id], 
                           get_gamestate()->animSet[id].anims[anim_id], 
                           animFrame);
 
@@ -624,6 +623,18 @@ int lua_DrawCubeTexture( lua_State *L ) {
     DrawCubeTexture(tex, pos, size.x, size.y, size.z, col);
     return 0;
 } 
+
+int lua_loadCubeModel( lua_State *L) {
+    Vector3 scale = lua_getVector3(L, 1);
+
+    Mesh cube_mesh = GenMeshCube( scale.x, scale.y, scale.z);
+    ModelSet* m = &get_gamestate()->modelSet;
+    m->models[m->count] = LoadModelFromMesh(cube_mesh);
+
+    lua_pushinteger(L, m->count++);
+    return 1;
+}
+
 
 // --------------------------------- audio ------------------------------------
 

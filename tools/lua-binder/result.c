@@ -108,3 +108,18 @@ int lua_DrawModelWires( lua_State *L ) {
     DrawModelWires();
     return 0;
 } 
+// returns a displacement vector for the collision in world space 
+int lua_collision_AABB_sphere( lua_State *L ) {
+    collision_AABB_sphere();
+    return 0;
+} 
+// Generate cuboid mesh 
+int lua_GenMeshCube( lua_State *L ) {
+    GenMeshCube();
+    return 0;
+} 
+// Load model from generated mesh (default material) 
+int lua_LoadModelFromMesh( lua_State *L ) {
+    LoadModelFromMesh();
+    return 0;
+} 

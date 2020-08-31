@@ -49,10 +49,38 @@ int main(int argc, const char **argv)
     for ( int i =0; i < num_gamepad_threads; i++)
         pthread_create(&gamepad_thread[i], NULL, joystick_event_thread, NULL);
 
+    char *settings_file;
+    if ( argc > 2 ) {
+        settings_file = (char*) malloc(strlen(argv[2]));
+        strcpy(settings_file, argv[2]);
+    } else {
+        // load default settings file
+        char relpath[] = "/lua/settings.lua";
+        char buf[512]; 
+
+        // get length of filepath to the main XNgine folder
+        readlink("/proc/self/exe", buf, 512);
+        char *prefix = strtok(buf, "/");
+        int pos = 0;
+        while( prefix != NULL ) {
+            if ( strcmp( prefix, "build") == 0 )
+                break;
+            pos += strlen(prefix) + 1;  
+            prefix = strtok(NULL, "/");
+        }
+
+        // copy path to main XNgine folder
+        readlink("/proc/self/exe", buf, 512);
+        settings_file = (char*)malloc(pos + strlen(relpath));
+        strcpy(settings_file, buf);
+        settings_file[pos] = 0;
+        strcat(settings_file, relpath); // append relative path to settings
+    } 
+
     // create lua instance
     lua_State *L = luaL_newstate();
     luaL_openlibs(L);
-    XN_SETTINGS settings = load_settings(L);
+    XN_SETTINGS settings = load_settings(L, settings_file);
     server_thread = ws_create_thread(settings._WEBSOCKET_DOMAIN, settings._WEBSOCKET_PORT);
 
     // dev console

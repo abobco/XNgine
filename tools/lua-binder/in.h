@@ -20,3 +20,6 @@ void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float hei
 void DrawCubeWiresV(Vector3 position, Vector3 size, Color color);                                  // Draw cube wires (Vector version)
 void DrawCubeV(Vector3 position, Vector3 size, Color color);                                       // Draw cube (Vector version)
 void DrawModelWires(Model model, Vector3 position, float scale, Color tint);                       // Draw a model wires (with texture if set)
+Vector3 collision_AABB_sphere( Transform box, Vector3 cen, float r );                              // returns a displacement vector for the collision in world space
+Mesh GenMeshCube(float width, float height, float length);                                         // Generate cuboid mesh
+Model LoadModelFromMesh(Mesh mesh);                                                                // Load model from generated mesh (default material)

@@ -21,7 +21,7 @@ XN_GameState create_XN_GameState( XN_SETTINGS *settings) {
     XN_GameState newgame;
     newgame.settings = settings;
 
-    newgame.models = malloc( sizeof( Model) * 64 );
+    newgame.modelSet.count = 0;
     newgame.animSet = malloc( sizeof( AnimationSet ) * 64 );
     return newgame;
 }
@@ -199,17 +199,17 @@ int lua_getPerlinNoise(lua_State *L) {
     return 1;
 }
 
-XN_SETTINGS load_settings(lua_State *L) {
+XN_SETTINGS load_settings(lua_State *L, const char *settings_file) {
     // load host libs onto lua VM
     lua_openLib(L, lua_raylib, "XN");
     lua_openFloatArrayLib(L);
     lua_openServerLib(L);
     lua_openParticleLib(L);
     lua_createColorTable(L);
-    
+
     // load settings file
     struct XN_SETTINGS settings;
-    check_lua(L, luaL_dofile(L, "../lua/settings.lua"));
+    check_lua(L, luaL_dofile(L, settings_file));
     lua_getglobal(L, "XN_SETTINGS");
     if ( !lua_istable(L, -1) ) {
         printf("Not a valid settings table bro\n");

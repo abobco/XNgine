@@ -1,6 +1,6 @@
 -- iqm model, animation loading. 
 
-dofile("../lua/3dcam.lua")  -- helper fn
+dofile("../lua/util/3dcam.lua")  -- helper fn
 
 time = 0
 interval = 1/60
@@ -20,7 +20,6 @@ load_model_mat(xab, "../models/orc8.png", 0)
 load_animations(xab , "../models/xabnab.iqm")
 
 cube_tex = load_texture("xabnab.png")
-
 curr_evt = vec(0,0)
 
 -- _fixedUpdate() is called at 60 hz

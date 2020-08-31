@@ -15,10 +15,11 @@ extern "C" {
 
 // ------------- phone message stuff ------------------------------------------
 
-typedef struct vec2 {
+typedef struct vec3 {
     float x;
     float y;
-} vec2;
+    float z;
+} vec3;
 
  enum MSG_TYPE {
     MSG_DISCONNECT = -1,
@@ -42,7 +43,7 @@ typedef struct Message {
     float timestamp;
     int user_id;
     enum USER_TYPE user_type;
-    vec2 motion;
+    vec3 motion;
     // const char* str_msg;
     // int button;
 } Message;
@@ -57,7 +58,7 @@ void **get_connection_ids();
 int insert_id( void* id ) ;
 void remove_id( void *id ) ;
 
-static struct vec2 motion_msg[MAX_CONNECTIONS];
+static vec3 motion_msg[MAX_CONNECTIONS];
 static int32_t num_connections = 0;
 
 #define MAX_MSG_BUFFER_SIZE 512
@@ -66,7 +67,7 @@ static pthread_mutex_t binary_sem;
 static struct queue *message_queue;
 
 int ws_create_thread(char *domain, int port  );
-vec2 get_motion_data(int idx );
+vec3 get_motion_data(int idx );
 int get_connections();
 int get_message_queue_size();
 struct MessageList pop_new_messages();

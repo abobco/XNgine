@@ -22,7 +22,8 @@
         "optional": "cpp",
         "new": "cpp",
         "type_traits": "cpp",
-        "random": "c"
+        "random": "c",
+        "cmath": "c"
     },
     "C_Cpp.default.includePath": [
         "./build/_deps/raylib-build/src/",
@@ -33,7 +34,11 @@
     ],
     "window.restoreWindows": "all",
     "cmake.configureOnOpen": false,
-    "python.pythonPath": "C:\\Users\\abobc\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe"
+    "python.pythonPath": "C:\\Users\\abobc\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe",
+    "Lua.diagnostics.globals": [
+        "server",
+        "msglist"
+    ]
     // "C_Cpp.default.systemIncludePath" : [
     //     "D:/SysGCC/raspberry/arm-linux-gnueabihf/include/arm-linux-gnueabihf/",
     //     // "D:/SysGCC/raspberry/arm-linux-gnueabihf/include/arm-linux-gnueabihf/sys"

@@ -74,11 +74,11 @@ list(APPEND xnlib src/servers/message_queue.c src/util/input.c src/servers/bt/ga
 list(APPEND xnlib src/graphics/particles.c src/graphics/renderer.c)
 set( lb src/lua-bindings )
 # ${lb}/lua_snake.c 
-list(APPEND xnlib ${lb}/lua_util.c ${lb}/lua_raylib.c ${lb}/lua_server.c ${lb}/lua_particles.c )
+list(APPEND xnlib ${lb}/lua_util.c ${lb}/lua_raylib.c ${lb}/lua_server.c ${lb}/lua_particles.c ${lb}/lua_physics.c )
 
 link_directories(build/_deps/raylib-build/src)
 
-add_library(xnlib-fn STATIC ${xnlib} )
+add_library(xnlib-fn SHARED ${xnlib} )
 
 # ========================================================================================
 
@@ -105,4 +105,4 @@ macro(XN_Build project_name src_file)
 endmacro()
 
 XN_Build( XNgine src/main.c )
-XN_Build( XNgine++ src/main.cpp )
+# XN_Build( XNgine++ src/main.cpp )

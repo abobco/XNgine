@@ -77,7 +77,8 @@ MessageList pop_new_messages() {
     new_messages.length = message_queue->length;
     for ( int i =0; i < (new_messages.length < MAX_MSG_BUFFER_SIZE ? new_messages.length : MAX_MSG_BUFFER_SIZE); i++) {
         new_messages.buffer[i] = deq(message_queue); // pop each element
-        // printf( "%f, %f\n", new_messages.buffer[i].motion.x, new_messages.buffer[i].motion.y);
+        
+        printf( "%f, %f, %f\n", new_messages.buffer[i].motion.x, new_messages.buffer[i].motion.y, new_messages.buffer[i].motion.z);
     }
     pthread_mutex_unlock(&binary_sem);
     return new_messages;

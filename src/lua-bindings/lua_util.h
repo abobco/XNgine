@@ -25,14 +25,10 @@ typedef struct XN_SETTINGS {
     char _WEBSOCKET_DOMAIN[124];
 } XN_SETTINGS;
 
-struct Guy {
-    Model model;
-    Texture2D tex;
-    Vector3 pos;
-    int animsCount;
-    ModelAnimation *anims;
-    int animFrameCounter;
-};
+typedef struct ModelSet {
+    Model models[64];
+    int count;
+} ModelSet;
 
 typedef struct AnimationSet {
     ModelAnimation *anims;
@@ -42,7 +38,7 @@ typedef struct AnimationSet {
 // globals accessed by both scripts and source code
 typedef struct XN_GameState {
     XN_SETTINGS *settings;
-    Model *models;
+    ModelSet modelSet;
     AnimationSet *animSet;
 } XN_GameState;
 
@@ -88,7 +84,7 @@ int lua_checkOOB(lua_State *L, int i, int n);
 
 // --------------------------------------------------------------------------------------
 
-XN_SETTINGS load_settings(lua_State *L);
+XN_SETTINGS load_settings(lua_State *L, const char *settings_file);
 XN_SETTINGS *get_settings();
 
 XN_GameState create_XN_GameState( XN_SETTINGS *settings);
@@ -151,6 +147,8 @@ int lua_DrawFPS( lua_State *L ); // Shows current FPS
 int lua_loadAudioStream(lua_State *L);
 
 // 3d
+Vector3 lua_getVector3Field( lua_State *L, const char *key, int table_stack_idx);
+Vector3 lua_getVector3( lua_State *L, int table_stack_idx);
 int lua_BeginMode3D( lua_State *L ); // Initializes 3D mode with custom camera (3D) 
 int lua_EndMode3D( lua_State *L ); // Ends 3D mode and returns to default 2D orthographic mode 
 int lua_DrawGrid( lua_State *L );
@@ -169,6 +167,10 @@ int lua_DrawSphere( lua_State *L ); // Draw sphere
 int lua_DrawCubeTexture( lua_State *L ); // Draw cube textured 
 int lua_DrawCubeWiresV( lua_State *L ); // Draw cube wires (Vector version) 
 int lua_DrawCubeV( lua_State *L ); // Draw cube (Vector version) 
+int lua_loadCubeModel( lua_State *L);
+
+// physics
+int lua_collision_AABB_sphere( lua_State *L ); // returns a displacement vector for the collision in world space 
 
 // define lua host libraries
 static const struct luaL_Reg lua_server_f[] = {
@@ -251,6 +253,8 @@ static const struct luaL_Reg lua_raylib[] = {
     { "draw_cube_texture", lua_DrawCubeTexture },
 	{ "draw_cube_wires", lua_DrawCubeWiresV },
 	{ "draw_cube", lua_DrawCubeV },
+    { "collision_aabb_sphere", lua_collision_AABB_sphere },
+    { "load_cube_model", lua_loadCubeModel },
     {0,0}   // terminator 
 };
 

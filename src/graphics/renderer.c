@@ -59,10 +59,10 @@ void draw_scene(TerminalInfo* terminal) {
     XN_GameState *g = get_gamestate();
 
     BeginDrawing();
-    // ClearBackground((Color) {30, 30, 30, 255});
+    ClearBackground((Color) {30, 30, 30, 255});
 
     lua_check_script_function(terminal->L, "_draw");
-
+    
     // draw lua terminal
     if ( terminal->isOpen ) {
         DrawRectangle( 0, 0, g->settings->_SCREEN_WIDTH, 120, (Color) {30, 30, 30, 150} );

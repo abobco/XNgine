@@ -34,8 +34,10 @@
 int ws_recv_motion_event(int32_t* packet) {
 	// convert to game data
 	int32_t player = packet[1]-1;
+	// lwsl_user("%d\n", player);
 	motion_msg[player].x = ((float)packet[2])*INT_TO_FLOAT_CONV_FACTOR;
 	motion_msg[player].y = ((float)packet[3])*INT_TO_FLOAT_CONV_FACTOR;
+	motion_msg[player].z = ((float)packet[4])*INT_TO_FLOAT_CONV_FACTOR;
 
 	// new message to add to the queue
 	struct Message msg_to_queue = {         
@@ -49,10 +51,6 @@ int ws_recv_motion_event(int32_t* packet) {
 	
 	// lwsl_user("S, R, %llu\n", ms_since_epoch() ); 
 	enq_msg(msg_to_queue); 
-	// pthread_mutex_lock(&binary_sem); // lock the shared resource      
-	// enq(message_queue, msg_to_queue); // add the message to the queue to the queue
-	// pthread_mutex_unlock(&binary_sem); // release to other threads
-
 	// lwsl_user("Player: %d (%f,%f)\n", player, ((float)ret[1])*INT_TO_FLOAT_CONV_FACTOR, ((float)ret[2])*INT_TO_FLOAT_CONV_FACTOR );
 
 	return 0;
@@ -99,13 +97,10 @@ int ws_recv_msg(void* input, size_t len) {
 				0.0f,						// timestamp
 				player,							// user id
 				USER_WEBSOCKET,
-				{0,0},      					// motion data    (optional)
+				{0,0,0},      					// motion data    (optional)
 				// NULL            			// string message (optional)
 			};
 			enq_msg(msg_to_queue); 		
-			// pthread_mutex_lock(&binary_sem); // lock the shared resource      
-			// enq(message_queue, msg_to_queue); // add the message to the queue to the queue
-			// pthread_mutex_unlock(&binary_sem); // release to other threads
 		}
 		break;		
 	}
@@ -198,22 +193,6 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 			} lws_end_foreach_llp(ppss, pss_list);
 
 			ws_broadcast_int(vhd, insert_id( (void*)wsi ) +1 );
-
-			// for ( int i = 0; i < MAX_CONNECTIONS; i++ ) {
-			// 	if ( connection_ids[i] == NULL ) {
-			// 		connection_ids[i] = wsi;
-			// 		if ( i >= get_connections() )
-			// 			add_connection();
-			// 		ws_broadcast_int(vhd, i+1 );
-			// 		break;
-			// 	}
-			// }
-
-			// send the new player count to all connections
-			// if ( connection_id  >  num_connections )
-			// 	ws_broadcast_int(vhd, ++num_connections);
-			// else 
-			// 	ws_broadcast_int(vhd, connection_id);
 			break;
 		
 		case LWS_CALLBACK_CLOSED:{
@@ -223,12 +202,6 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 					pss, vhd->pss_list);
 
 			remove_id((void*)wsi);	
-			// for ( int i = 0; i < MAX_CONNECTIONS; i++ ) {
-			// 	if ( connection_ids[i] == wsi ) {
-			// 		connection_ids[i] = NULL;
-			// 		break;
-			// 	}
-			// }
 
 			// new message to add to the queue
 			struct Message msg_to_queue = {         
@@ -236,7 +209,7 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 				0.0f,						// timestamp
 				0,							// user id
 				USER_WEBSOCKET,
-				{0,0}      					// motion data    (optional)
+				{0,0,0}      					// motion data    (optional)
 				// NULL            			// string message (optional)
 			};
 				
