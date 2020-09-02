@@ -530,6 +530,10 @@ static void draw_model_generic( lua_State *L, void (*func) (Model, Vector3, Vect
         lua_getVector3(L, 5),
         lua_getColor(L, 6)
     );
+
+    // for ( int i =0; i < get_gamestate()->modelSet.models[id].meshes[0].vertexCount*3; i+=3 ) {
+    //     printf("%f\n", get_gamestate()->modelSet.models[id].meshes[0].vertices[i+1]);
+    // } 
 }
 
 
@@ -626,8 +630,11 @@ int lua_DrawCubeTexture( lua_State *L ) {
 
 int lua_loadCubeModel( lua_State *L) {
     Vector3 scale = lua_getVector3(L, 1);
-
     Mesh cube_mesh = GenMeshCube( scale.x, scale.y, scale.z);
+    // for ( int i =0; i < cube_mesh.vertexCount*3; i+=3 ) {
+    //     cube_mesh.vertices[i+1] -= 100;
+    //     // printf("%f\n", cube_mesh.vertices[i+1]);
+    // } 
     ModelSet* m = &get_gamestate()->modelSet;
     m->models[m->count] = LoadModelFromMesh(cube_mesh);
 

@@ -141,6 +141,11 @@ function vec(_x, _y, _z, _w)
     return ret
 end
 
+function print_vec(a, name)
+    name = name or ""
+    print(name, a.x, a.y, a.z)
+end
+
 function vec_add(a, b)
     local ret = vec(a.x + b.x, a.y + b.y)
     if a.z and b.z then
@@ -148,6 +153,47 @@ function vec_add(a, b)
     end
     return ret
 end 
+
+function vec_sub(a, b)
+    local ret = {}
+    for k, v in pairs(a) do
+        ret[k] = v - b[k]
+    end
+    return ret
+end 
+
+function vec_len(a)
+    return sqrt( a.x*a.x + a.y*a.y + a.z*a.z)
+end
+
+function vec_norm(a)
+    local len = vec_len(a)
+    return vec( a.x/len, a.y/len, a.z/len )
+end
+
+function vec_neg(a)
+    local ret = {}
+    for k, v in pairs(a) do
+        ret[k] = -v
+    end
+    return ret
+end
+
+function vec_scale(vec, s)
+    local ret = {}
+    for k, v in pairs(vec) do
+        ret[k] = v*s
+    end
+    return ret
+end
+
+function vec_dot(a,b)
+    local d = 0
+    for k, val in pairs(a) do
+        d += a[k]*b[k]
+    end
+    return d
+end
 
 function color(_r, _g, _b, _a )
     return { r=_r, g=_g, b=_b, a=_a }

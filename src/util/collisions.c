@@ -186,6 +186,11 @@ static void clamp_to_bound(float *m, Vector3 *b, Vector3 *d ) {
     *m = minval; *d = disp;
 }
 
+float halfspace_point( Vector3 plane, Vector3 normal, Vector3 point ) {
+    Vector3 plane_to_point = Vector3Subtract(point, plane);
+    return Vector3DotProduct(normal, plane_to_point);
+}
+
 // returns a displacement vector for the collision
 Vector3 collision_AABB_sphere( Transform box, Vector3 cen, float r ) {
     box.scale = Vector3Scale(box.scale, 0.5);

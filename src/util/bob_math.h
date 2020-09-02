@@ -43,6 +43,8 @@ Vector3 transform_point( Vector3 point, Transform t );
 
 Vector3 inv_transform_point( Vector3 point, Transform t );
 
+float halfspace_point( Vector3 plane, Vector3 normal, Vector3 point );
+
 Vector3 collision_AABB_sphere( Transform box, Vector3 cen, float r ); // returns a displacement vector for the collision in world space
 
 #ifdef __cplusplus

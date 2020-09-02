@@ -170,6 +170,8 @@ int lua_DrawCubeV( lua_State *L ); // Draw cube (Vector version)
 int lua_loadCubeModel( lua_State *L);
 
 // physics
+int lua_halfspace_point( lua_State *L );
+int lua_rotateVectorEulers( lua_State *L );
 int lua_collision_AABB_sphere( lua_State *L ); // returns a displacement vector for the collision in world space 
 
 // define lua host libraries
@@ -255,6 +257,8 @@ static const struct luaL_Reg lua_raylib[] = {
 	{ "draw_cube", lua_DrawCubeV },
     { "collision_aabb_sphere", lua_collision_AABB_sphere },
     { "load_cube_model", lua_loadCubeModel },
+    { "halfspace_point", lua_halfspace_point },
+    { "vec_rotate_euler", lua_rotateVectorEulers },
     {0,0}   // terminator 
 };
 
