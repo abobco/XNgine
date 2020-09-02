@@ -1,4 +1,3 @@
--- dofile("../lua/util/animation.lua")
 dofile("../lua/util/3dcam.lua")
 
 time = 0
@@ -27,11 +26,10 @@ Box = {
     rotation=vec(0, 0, 0, 1),
     eulers = {},
     scale=vec(1,1,1),
-    color=BEIGE,
     model=-1,
 }
 
-function Box:new(pos, scale, anchor, color, model)
+function Box:new(pos, scale, anchor, model)
     local o = o or {}
     setmetatable(o, {__index = self}) 
     o.position = pos or Box.position
@@ -39,27 +37,26 @@ function Box:new(pos, scale, anchor, color, model)
     o.rotation = vec(0, 0, 0, 1)
     o.eulers = vec(0,0,0)
     o.scale = scale or Box.scale
-    o.color = color or Box.color
     o.model = model or load_cube_model(o.scale)
     return o
 end
 
-function Box:draw(scale)
+function Box:draw(color)
     draw_model(self.model,
                self.position,  
                vec(1, 0, 0),    
                0,
-               scale or vec(1, 1, 1), 
-               self.color )
+               vec(1, 1, 1), 
+               color )
 end
 
 Sphere = { 
-    position = vec(3,1.15,3),
-    radius = 0.5,
+    position = vec(0,0,0),
+    radius = 1,
 }
 
 function Sphere:new(pos, radius)
-    local o = {}
+    local o = o or {}
     setmetatable(o, {__index = self}) 
     o.position = pos or Sphere.position
     o.radius = radius or Sphere.radius
@@ -120,7 +117,7 @@ function box_sphere_collision(box, sphere)
     sphere.col_side = closest_side
 end
 
-ground = Box:new(vec(0,8, 0), vec(4, 1, 4), vec(0,1,0), BEIGE, load_model("../models/lowcube.iqm"))
+ground = Box:new(vec(0,8, 0), vec(4, 1, 4), vec(0,1,0), load_model("../models/lowcube.iqm"))
 ground.up = vec(0,1,0)
 
 ball = Sphere:new(vec_add(ground.position, vec(0,6,0)), 0.5)
@@ -133,8 +130,8 @@ spawn_plane = -5
 cam_ang_speed = 0
 cam_orb_rad = 16
 cam = Camera:new( vec(cam_orb_rad, ground.position.y+16, 0),     -- position
-                  ground.position,     -- target
-                  vec(0,  1, 0) )    -- camera up
+                  ground.position,                               -- target
+                  vec(0,  1, 0) )                                -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
 
 -- _fixedUpdate() is called at 60 hz
@@ -182,7 +179,7 @@ function _draw()
     
     draw_grid(40, 1)
 
-    ground:draw(vec(1,1,1))
+    ground:draw(BEIGE)
     ball:draw(ORANGE)
     
     end_3d_mode()
