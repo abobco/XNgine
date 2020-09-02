@@ -1,12 +1,5 @@
 dofile("../lua/util/3dcam.lua")
 
-time = 0
-interval = 1/60
-score = 0
-
-curr_evt = vec(0,0,0)
-gravity = vec(0,-0.01, 0)
-
 Plane = {
     position=vec(0,0,0),
     up=vec(0,1,0)
@@ -116,6 +109,13 @@ function box_sphere_collision(box, sphere)
     sphere.vel = vec_rej(sphere.vel, closest_side.up)
     sphere.col_side = closest_side
 end
+
+time = 0
+interval = 1/60
+score = 0
+
+curr_evt = vec(0,0,0)
+gravity = vec(0,-0.01, 0)
 
 ground = Box:new(vec(0,8, 0), vec(4, 1, 4), vec(0,1,0), load_model("../models/lowcube.iqm"))
 ground.up = vec(0,1,0)
