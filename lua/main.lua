@@ -88,9 +88,9 @@ function box_sphere_collision(box, sphere)
         side.position = vec_add(side.position, box.position)
 
         -- get signed distance to the plane
-        local closest = vec_scale(vec_neg(side.up), sphere.radius)
-        closest = vec_add(closest, sphere.position)
-        local d = halfspace_point(side.position, side.up, closest)
+        local closest_pt_on_sphere = vec_scale(vec_neg(side.up), sphere.radius)
+        closest_pt_on_sphere = vec_add(closest_pt_on_sphere, sphere.position)
+        local d = halfspace_point(side.position, side.up, closest_pt_on_sphere)
         if d <= 0 then
             if d > closest_d then
                 closest_d = d
@@ -110,15 +110,12 @@ function box_sphere_collision(box, sphere)
     sphere.col_side = closest_side
 end
 
-time = 0
-interval = 1/60
 score = 0
 
 curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
 ground = Box:new(vec(0,8, 0), vec(4, 1, 4), vec(0,1,0), load_model("../models/lowcube.iqm"))
-ground.up = vec(0,1,0)
 
 ball = Sphere:new(vec_add(ground.position, vec(0,6,0)), 0.5)
 ball.inbounds = true
@@ -136,7 +133,6 @@ cam:set_mode(CAMERA_PERSPECTIVE)
 
 -- _fixedUpdate() is called at 60 hz
 function _fixedUpdate()
-    time += interval
     score += 1
 
     if ball.inbounds then 
@@ -155,7 +151,6 @@ end
 
 -- _draw() is called once every frame update
 function _draw()
-
     -- handle input
     local msglist = server.pop() 
     for i=1, msglist:size() do
@@ -168,10 +163,9 @@ function _draw()
             end
         end
     end
-
-    -- rotate ground
-    model_rotate_euler(ground.model, curr_evt.z + pi/2, 0, -curr_evt.y)
+    
     ground.eulers =  vec(-curr_evt.z, 0, curr_evt.y)
+    model_rotate_euler(ground.model, curr_evt.z + pi/2, 0, -curr_evt.y)
 
     box_sphere_collision(ground, ball)
 
