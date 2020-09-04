@@ -82,7 +82,7 @@ function box_sphere_collision(box, sphere)
     }
     
     -- separating axis test
-    local closest_d = -math.maxinteger
+    local closest_d = math.mininteger
     local closest_side = {}
     for k, side in pairs(sides) do
         -- transform to global space
@@ -135,6 +135,8 @@ cam = Camera:new( vec(cam_orb_rad, ground.position.y+16, 0),     -- position
                   ground.position,                               -- target
                   vec(0,  1, 0) )                                -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
+
+-- light_shader = load_shader("../shaders/base_lighting.vs", "../shaders/lighting.fs")
 
 -- _fixedUpdate() is called at 60 hz
 function _fixedUpdate()

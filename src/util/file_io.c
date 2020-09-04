@@ -30,7 +30,6 @@ void get_line( int line_num, TerminalInfo* terminal ) {
     const char *f_name = "terminal_history.txt";
 
     int num_lines = lines_in_file(f_name);
-    printf("%d\n", num_lines);
     char line[num_lines][LINE_WIDTH];
     int i = 0;
     int tot = 0;
@@ -43,10 +42,13 @@ void get_line( int line_num, TerminalInfo* terminal ) {
     }
     tot = i;
 
+#if DEBUG_TERMINAL
+    printf("%d\n", num_lines);
     for(i = 0; i < tot; ++i)
     {
         printf(" %s\n", line[i]);
     }
+#endif
 
     if ( line_num >= num_lines ) line_num = num_lines;
     strcpy( terminal->input, line[num_lines-line_num] );

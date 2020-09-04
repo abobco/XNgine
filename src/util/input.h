@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#define DEBUG_TERMINAL 0
+
 #define JOYSTICK_DEAD_ZONE 0.3
 #define U_TURN_IGNORE_ANGLE 90
 

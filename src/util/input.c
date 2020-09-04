@@ -2,7 +2,6 @@
 #include "raylib.h"
 
 // mobile gyroscope event handlers
-
 Vector2 gyro_to_axis(float angle) {
     Vector2 axis;
 
@@ -114,7 +113,15 @@ TerminalInfo create_TerminalInfo(  lua_State *L ) {
     return t;
 }
 
-void handle_keyboard_input(TerminalInfo *terminal) {
+static void print_terminal(TerminalInfo *terminal) {
+#if DEBUG_TERMINAL         
+    printf("[LUA CONSOLE]:\n > %s\n", terminal->input);
+#else                    // 
+    printf("%c[2J[LUA CONSOLE]:\n > %s\n", 27, terminal->input);
+#endif
+}
+
+ void handle_keyboard_input(TerminalInfo *terminal) {
     if ( kbhit() ) {
         char c = getch();
         // PRINT(c);
@@ -122,8 +129,11 @@ void handle_keyboard_input(TerminalInfo *terminal) {
             switch (c) {
                 case '`': 
                     terminal->isOpen = true; // send keyboard input to lua console
+#if DEBUG_TERMINAL
+                    printf("\n[LUA CONSOLE]:\n > \n");  
+#else
                     printf("\n%c[2J[LUA CONSOLE]:\n > \n", 27);    
-                    // printf("\n[LUA CONSOLE]:\n > \n");    
+#endif              
                 break;
 
                 case 'c':
@@ -131,7 +141,6 @@ void handle_keyboard_input(TerminalInfo *terminal) {
                 break;
             }   
         } else {
-            // static int cursor_pos = 0;
             static int special_keymode = false;
             if (c == VK_SPECIAL_KEY_STARTING) {
                 special_keymode = true;
@@ -140,17 +149,17 @@ void handle_keyboard_input(TerminalInfo *terminal) {
                     case VK_RIGHT: case VK_LEFT: case VK_UP: case VK_DOWN:
                         if ( c == VK_LEFT && terminal->cursorPos > 0)
                             terminal->cursorPos--;
-                        if ( c == VK_RIGHT )
+                        if ( c == VK_RIGHT && terminal->cursorPos < strlen(terminal->input))
                             terminal->cursorPos++;
                         if ( c == VK_UP ) {
                             get_line(++terminal->hist_pos, terminal);
-                            terminal->cursorPos = strlen(terminal->input)-1;
-                            printf("[LUA CONSOLE]:\n > %s\n", terminal->input);
+                            terminal->cursorPos = strlen(terminal->input);
+                            print_terminal(terminal);
                         } 
-                        if ( c == VK_DOWN ) {
+                        if ( c == VK_DOWN && terminal->hist_pos > 0) {
                             get_line(--terminal->hist_pos, terminal);
                             terminal->cursorPos = strlen(terminal->input);
-                            printf("[LUA CONSOLE]:\n > %s\n", terminal->input);
+                            print_terminal(terminal);
                         }
 
                         special_keymode = false;
@@ -169,13 +178,19 @@ void handle_keyboard_input(TerminalInfo *terminal) {
                     terminal->cursorPos = 0;
                     terminal->hist_pos = 0;
                 } else {
-                    if ( c == VK_BACKSPACE && terminal->cursorPos > 0)
-                        terminal->input[--terminal->cursorPos] = '\0';
-                    else if ( c != VK_BACKSPACE )
-                        terminal->input[terminal->cursorPos++] = c;
-                    printf("%c[2J[LUA CONSOLE]:\n > %s", 27, terminal->input);
-                    // printf("[LUA CONSOLE]:\n > %s", terminal->input);
-                    printf("\n");
+                    if ( c == VK_BACKSPACE && terminal->cursorPos > 0) {
+                        for ( int i = --terminal->cursorPos; i < strlen(terminal->input); i++ ) {
+                            terminal->input[i] = terminal->input[i+1];
+                        }
+                    }
+                    else if ( c != VK_BACKSPACE ) {
+                        terminal->input[strlen(terminal->input)+1] = '\0';
+                        for ( int i = strlen(terminal->input);  i > terminal->cursorPos;  i-- ) {
+                            terminal->input[i] = terminal->input[i-1];
+                        }
+                        terminal->input[terminal->cursorPos++] = c; 
+                    }
+                    print_terminal(terminal);
                 }
             }
         }
