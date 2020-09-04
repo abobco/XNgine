@@ -10,7 +10,6 @@ function Plane:new(pos, up)
     setmetatable(o, {__index = self}) 
     o.position = pos or Plane.position
     o.up = up or Plane.up
-    
     return o
 end
 
@@ -66,6 +65,12 @@ function vec_rej(a,b)
     return vec_sub(a, proj)
 end
 
+function halfspace_distance( plane, norm, point )
+    local d = vec_sub(point, plane)
+    return vec_dot(norm, d)
+end
+
+
 function box_sphere_collision(box, sphere)
     local sides = {
         Plane:new(vec( 0,  1, 0), vec( 0, 1, 0)),
@@ -90,15 +95,13 @@ function box_sphere_collision(box, sphere)
         -- get signed distance to the plane
         local closest_pt_on_sphere = vec_scale(vec_neg(side.up), sphere.radius)
         closest_pt_on_sphere = vec_add(closest_pt_on_sphere, sphere.position)
-        local d = halfspace_point(side.position, side.up, closest_pt_on_sphere)
-        if d <= 0 then
-            if d > closest_d then
-                closest_d = d
-                closest_side = side
-            end
-        else
+        local d = halfspace_distance(side.position, side.up, closest_pt_on_sphere)
+        if d > 0 then
             sphere.inbounds = false
             return
+        elseif d > closest_d then
+            closest_d = d
+            closest_side = side
         end
     end
 
@@ -106,7 +109,9 @@ function box_sphere_collision(box, sphere)
     local plane_to_sphere = vec_scale(closest_side.up, closest_d)
     sphere.position = vec_sub(sphere.position, plane_to_sphere) 
     sphere.inbounds = true
-    sphere.vel = vec_rej(sphere.vel, closest_side.up)
+    if vec_dot(sphere.vel, closest_side.up) < 0 then
+        sphere.vel = vec_rej(sphere.vel, closest_side.up)
+    end
     sphere.col_side = closest_side
 end
 
@@ -133,7 +138,7 @@ cam:set_mode(CAMERA_PERSPECTIVE)
 
 -- _fixedUpdate() is called at 60 hz
 function _fixedUpdate()
-    score += 1
+    box_sphere_collision(ground, ball)
 
     if ball.inbounds then 
         ball.vel = vec_add(ball.vel, vec_rej(gravity, ball.col_side.up))
@@ -147,6 +152,8 @@ function _fixedUpdate()
         score = 0
         ball.vel = vec(0, ball.vel.y, 0)
     end 
+
+    score += 1
 end
 
 -- _draw() is called once every frame update
@@ -166,8 +173,6 @@ function _draw()
     
     ground.eulers =  vec(-curr_evt.z, 0, curr_evt.y)
     model_rotate_euler(ground.model, curr_evt.z + pi/2, 0, -curr_evt.y)
-
-    box_sphere_collision(ground, ball)
 
     begin_3d_mode(cam)
     

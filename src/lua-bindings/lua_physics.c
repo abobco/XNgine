@@ -31,17 +31,6 @@ Transform lua_getTransform( lua_State *L, int table_stack_idx ) {
     return (Transform) {t, q, s};
 }
 
-int lua_halfspace_point( lua_State *L ) {
-    Vector3 plane = lua_getVector3(L, 1);
-    Vector3 normal = lua_getVector3(L, 2);
-    Vector3 point = lua_getVector3(L, 3);
-
-    float r = halfspace_point(plane, normal, point);
-    lua_pushnumber(L, r);
-
-    return 1;
-}
-
 int lua_rotateVectorEulers( lua_State *L ) {
     Vector3 vec = lua_getVector3(L, 1);
     Vector3 eul = lua_getVector3(L, 2);

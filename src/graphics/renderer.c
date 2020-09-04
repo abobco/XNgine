@@ -61,11 +61,6 @@ void draw_scene(TerminalInfo* terminal) {
     BeginDrawing();
     ClearBackground((Color) {30, 30, 30, 255});
 
-    // Quaternion q = QuaternionFromEuler(PI/4, 0, 0);
-    // print_vec(Vector3RotateByQuaternion((Vector3) {0,1,0}, q ));
-
-    // printf("fp: %f\n", halfspace_point( (Vector3) {0,0,0}, (Vector3) {0,1,0}, (Vector3) {1,5,3} ) );
-
     lua_check_script_function(terminal->L, "_draw");
     
     // draw lua terminal
