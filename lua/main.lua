@@ -38,15 +38,15 @@ function Transform:transformPoint(point)
 end
 
 Plane = {
-    position=vec(0,0,0),
-    up=vec(0,1,0)
+    point=vec(0,0,0),
+    normal=vec(0,1,0)
 }
 
-function Plane:new(pos, up)
+function Plane:new(pos, normal)
     local o = {}
     setmetatable(o, {__index = self}) 
-    o.position = pos or Plane.position
-    o.up = up or Plane.up
+    o.point = pos or Plane.point
+    o.normal = normal or Plane.normal
     return o
 end
 
@@ -74,8 +74,8 @@ end
 
 function Box:draw(color)
     draw_model(self.model,
-            --    self.world_transform:transformPoint(self.local_transform.position),  
-               self.position,
+               self.world_transform:transformPoint(self.local_transform.position),  
+            --    self.position,
                vec(1, 0, 0),    
                0,
                vec(1, 1, 1), 
@@ -115,9 +115,9 @@ function sep_axis(sides, sphere)
     local closest_side = {}
     for k, side in pairs(sides) do
         -- get signed distance to the plane
-        local closest_pt_on_sphere = vec_scale(vec_neg(side.up), sphere.radius)
+        local closest_pt_on_sphere = vec_scale(vec_neg(side.normal), sphere.radius)
         closest_pt_on_sphere = vec_add(closest_pt_on_sphere, sphere.position)
-        local d = halfspace_distance(side.position, side.up, closest_pt_on_sphere)
+        local d = halfspace_distance(side.point, side.normal, closest_pt_on_sphere)
         if d > 0 then
             sphere.inbounds = false
             return
@@ -135,8 +135,8 @@ score = 0
 curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
-ground = Box:new(vec(0,8, 0), vec(4, 1, 4), vec(0,-1,0), load_model("../models/lowcube.iqm"))
-ramp = Box:new(vec(0, 8, 0), vec(1, 1, 1), vec(0,1,0), load_model("../models/triangular_prism.iqm"))
+ground = Box:new(vec(0,8, 0), vec(1, 1, 1), vec(0,0,0), load_model("../models/lowcube.iqm"))
+ramp = Box:new(ground.position, vec(1, 1, 1), vec(0,3,0), load_model("../models/triangular_prism.iqm"))
 cat = Box:new(vec(0, 8, 3), vec(1, 1, 1), vec(0,1,0), load_model("../models/concave_cat.iqm"))
 
 ball = Sphere:new(vec_add(ground.position, vec(0,6,0)), 0.5)
@@ -157,33 +157,27 @@ cam:set_mode(CAMERA_PERSPECTIVE)
 
 -- _fixedUpdate() is called at 60 hz
 function _fixedUpdate()
-    -- get halfspace bounds for collision tests
-    local box = {}
-    for k, v in pairs(Transform.axes) do
-        box[#box+1] = Plane:new( v, ground.world_transform.axes[k])
-        box[#box+1] = Plane:new(vec_neg(v), vec_neg(ground.world_transform.axes[k]))
+    -- get sets of intersecting planes defining the collision meshes
+    local bodies = {
+        {obj=ground, bounds=get_halfspace_bounds(ground.model)},
+        {obj=ramp, bounds=get_halfspace_bounds(ramp.model)}
+    }
+    
+    -- transform to world space
+    for k, v in pairs(bodies) do
+        for mk, mv in pairs(v.bounds) do
+            mv.point = v.obj.local_transform:transformPoint(mv.point)
+            mv.point = v.obj.world_transform:transformPoint(mv.point)
+            mv.normal = vec_rotate_euler(mv.normal, v.obj.local_transform.eulers)
+            mv.normal = vec_rotate_euler(mv.normal, v.obj.world_transform.eulers)
+        end
     end
 
-    for k, v in pairs(box) do
-        v.position = ground.local_transform:transformPoint(v.position)
-        v.position = ground.world_transform:transformPoint(v.position)
+    -- separating axis overlap tests
+    local results = {}
+    for k, v in pairs(bodies) do
+        results[k] = sep_axis(v.bounds, ball)
     end
-
-    local tri_prism = { Plane:new(vec( 0, 0, 1), vec( 0, 0, 1)),
-                        Plane:new(vec( 0, 0,-1), vec( 0, 0,-1)),
-                        Plane:new(vec( 0,-1, 0), vec( 0,-1, 0)),
-                        Plane:new(vec( 1, 0, 0), vec( 1, 0, 0)),
-                        Plane:new(vec( 0, 0, 0), vec_norm(vec(-1,1,0))) }
-
-    for k, v in pairs(tri_prism) do 
-        v.position = ramp.local_transform:transformPoint(v.position)
-        v.position = ramp.world_transform:transformPoint(v.position)
-        v.up = vec_rotate_euler(v.up, ramp.local_transform.eulers)
-        v.up = vec_rotate_euler(v.up, ramp.world_transform.eulers)
-    end
-
-    -- sphere-convex polyhedron collision tests
-    local results = { sep_axis(box, ball), sep_axis(tri_prism, ball) }
     local closest = nil
     for k, v in pairs(results) do
         if v and ( not closest or v.d > closest.d ) then
@@ -193,18 +187,18 @@ function _fixedUpdate()
 
     if closest then
         -- collision response
-        local plane_to_sphere = vec_scale(closest.s.up, closest.d)
+        local plane_to_sphere = vec_scale(closest.s.normal, closest.d)
         ball.position = vec_sub(ball.position, plane_to_sphere) 
         ball.inbounds = true
-        if vec_dot(ball.vel, closest.s.up) < 0 then
-            ball.vel = vec_rej(ball.vel, closest.s.up)
+        if vec_dot(ball.vel, closest.s.normal) < 0 then
+            ball.vel = vec_rej(ball.vel, closest.s.normal)
         end
         ball.col_side = closest.s
     end
 
     -- physics update
     if ball.inbounds then 
-        ball.vel = vec_add(ball.vel, vec_rej(gravity, ball.col_side.up))
+        ball.vel = vec_add(ball.vel, vec_rej(gravity, ball.col_side.normal))
     else 
         ball.vel.y += gravity.y
     end
@@ -233,8 +227,8 @@ function _draw()
             end
         end
     end
-    ground.world_transform:setEulers( vec(-curr_evt.z, 0, curr_evt.y) )
-    ramp.world_transform:setEulers( vec(-curr_evt.z, 0, curr_evt.y) )
+    ground.world_transform:setEulers( vec(-curr_evt.z - pi/2, 0, curr_evt.y) )
+    ramp.world_transform:setEulers( vec(-curr_evt.z - pi/2, 0, curr_evt.y) )
     model_rotate_euler(ground.model, curr_evt.z + pi/2, 0, -curr_evt.y)
     model_rotate_euler(ramp.model, curr_evt.z + pi/2, 0,  -curr_evt.y)
 

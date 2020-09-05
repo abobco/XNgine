@@ -31,6 +31,33 @@ Transform lua_getTransform( lua_State *L, int table_stack_idx ) {
     return (Transform) {t, q, s};
 }
 
+int lua_getConvexMeshBounds( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    PlaneSet *p = &get_gamestate()->modelSet.convexMeshBounds[id];
+    if ( p == NULL ) {
+        printf("[PHYSICS] halfspace bounds not found! Not a convex mesh\n");
+        return 0;
+    }
+
+    lua_newtable(L);
+    for ( int i = 0; i < p->count; i++ ) {
+        lua_pushinteger(L, i+1);
+        lua_newtable(L);
+
+        lua_pushstring(L, "point");
+        lua_pushVector3(L, p->planes[i].point);
+        lua_settable(L, -3);
+
+        lua_pushstring(L, "normal");
+        lua_pushVector3(L, p->planes[i].normal);
+        lua_settable(L, -3);
+
+        lua_settable(L, -3);
+    }
+
+    return 1;
+}
+ 
 int lua_rotateVectorEulers( lua_State *L ) {
     Vector3 vec = lua_getVector3(L, 1);
     Vector3 eul = lua_getVector3(L, 2);

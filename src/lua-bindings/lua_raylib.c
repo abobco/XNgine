@@ -499,7 +499,7 @@ int lua_loadModel( lua_State *L ) {
         }  
     }
 
-    // get local bounds for separating axis tests
+    // get local halfspace bounds for separating axis tests
     if (is_convex) {
         struct PlaneNode { 
             Plane plane; 
@@ -569,8 +569,11 @@ int lua_loadModel( lua_State *L ) {
     char mesh_type[32] = "";
     if (is_convex) strcpy(mesh_type, "convex");
     else           strcpy(mesh_type, "\033[1;31mconcave\033[0m");
-    printf("model '%s' loaded with %d %s mesh%s ", mfile, mesh_count, mesh_type, mesh_count > 1 ? "es":"" );
-    printf("of %d triangles\n", mesh->triangleCount);
+    printf("Model '%s' loaded:\t %d %s mesh%s ", mfile, mesh_count, mesh_type, mesh_count > 1 ? "es":"" );
+    printf("of %d triangles", mesh->triangleCount);
+    if (is_convex) printf(", bounded by %d planes", m->convexMeshBounds[m->count].count);
+    printf("\n");
+    
     
     lua_pushinteger(L, m->count++);
 

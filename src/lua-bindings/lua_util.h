@@ -181,7 +181,8 @@ int lua_loadCubeModel( lua_State *L);
 
 // physics
 int lua_rotateVectorEulers( lua_State *L );
-int lua_collision_AABB_sphere( lua_State *L ); // returns a displacement vector for the collision in world space 
+int lua_collision_AABB_sphere( lua_State *L );
+int lua_getConvexMeshBounds( lua_State *L );
 
 // define lua host libraries
 static const struct luaL_Reg lua_server_f[] = {
@@ -267,6 +268,7 @@ static const struct luaL_Reg lua_raylib[] = {
     { "collision_aabb_sphere", lua_collision_AABB_sphere },
     { "load_cube_model", lua_loadCubeModel },
     { "vec_rotate_euler", lua_rotateVectorEulers },
+    { "get_halfspace_bounds", lua_getConvexMeshBounds },
     {0,0}   // terminator 
 };
 
