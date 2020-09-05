@@ -479,39 +479,44 @@ int lua_DrawGrid( lua_State *L ) {
 
 int lua_loadModel( lua_State *L ) {
     const char *mfile = luaL_checkstring(L, 1);
-
     ModelSet *m =  &get_gamestate()->modelSet;
     m->models[m->count] = LoadModel(mfile);
     int mesh_count = m->models[m->count].meshCount;
-    printf("model loaded with %d mesh%s ", mesh_count, mesh_count > 1 ? "es":"" );
-
     Mesh *mesh = &m->models[m->count].meshes[0];
-    printf("and %d triangles\n", mesh->triangleCount);
-    
-    lua_pushinteger(L, m->count++);
-    
+    char mesh_type[32] = "";
+
     // O(n^2) polyhedron convexity test
     // TODO: replace w/ O(n) centroid method
     if ( mesh->vertexCount > 512 )
-        return 1;
-    for ( int i=0; i < mesh->triangleCount; i++ ) {
-        unsigned short sup_idx = mesh->indices[i*3]*3;
-        Vector3 supporting_pt = get_vert(mesh->vertices, sup_idx);        
-        Vector3 normal = get_vert(mesh->normals, sup_idx);  
+        strcpy(mesh_type, "unknown");
+    else {
+        bool failed = false;
+        for ( int i=0; i < mesh->triangleCount && !failed; i++ ) {
+            unsigned int sup_idx = mesh->indices[i*3]*3;
+            Vector3 supporting_pt = get_vert(mesh->vertices, sup_idx);        
+            Vector3 normal = get_vert(mesh->normals, sup_idx);  
 
-        for ( int j = 0; j < mesh->vertexCount; j+=3 ) {
-            Vector3 vert = get_vert(mesh->vertices, j);  
-            if ( halfspace_point(supporting_pt, normal, vert) > EPSILON ) {
-                 printf("concave mesh\n");
-                 return 1;
-            }
-        } 
-        // PRINT(i);
-        // print_vec(normal);
-        // print_vec(supporting_pt);   
+            for ( int j = 0; j < mesh->vertexCount; j+=3 ) {
+                Vector3 vert = get_vert(mesh->vertices, j);  
+                if ( halfspace_point(supporting_pt, normal, vert) > EPSILON ) {
+                    strcpy(mesh_type, "\033[1;31mconcave\033[0m");
+                    failed = true;
+                    break;
+                }
+            } 
+            // PRINT(i);
+            // print_vec(normal);
+            // print_vec(supporting_pt);   
+        }
+        if (!failed)
+            strcpy(mesh_type, "convex");
     }
-    printf("\n");
-    printf("convex mesh\n");
+
+    printf("model '%s' loaded with %d %s mesh%s ", mfile, mesh_count, mesh_type, mesh_count > 1 ? "es":"" );
+    printf("of %d triangles\n", mesh->triangleCount);
+    
+    lua_pushinteger(L, m->count++);
+    
     return 1;
 }
 
