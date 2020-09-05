@@ -487,30 +487,27 @@ int lua_loadModel( lua_State *L ) {
 
     // O(n^2) polyhedron convexity test
     // TODO: replace w/ O(n) centroid method
-    if ( mesh->vertexCount > 512 )
-        strcpy(mesh_type, "unknown");
-    else {
-        bool failed = false;
-        for ( int i=0; i < mesh->triangleCount && !failed; i++ ) {
-            unsigned int sup_idx = mesh->indices[i*3]*3;
-            Vector3 supporting_pt = get_vert(mesh->vertices, sup_idx);        
-            Vector3 normal = get_vert(mesh->normals, sup_idx);  
+    bool failed = false;
+    for ( int i=0; i < mesh->triangleCount && !failed; i++ ) {
+        unsigned int sup_idx = mesh->indices[i*3]*3;
+        Vector3 supporting_pt = get_vert(mesh->vertices, sup_idx);        
+        Vector3 normal = get_vert(mesh->normals, sup_idx);  
 
-            for ( int j = 0; j < mesh->vertexCount; j+=3 ) {
-                Vector3 vert = get_vert(mesh->vertices, j);  
-                if ( halfspace_point(supporting_pt, normal, vert) > EPSILON ) {
-                    strcpy(mesh_type, "\033[1;31mconcave\033[0m");
-                    failed = true;
-                    break;
-                }
-            } 
-            // PRINT(i);
-            // print_vec(normal);
-            // print_vec(supporting_pt);   
-        }
-        if (!failed)
-            strcpy(mesh_type, "convex");
+        for ( int j = 0; j < mesh->vertexCount; j+=3 ) {
+            Vector3 vert = get_vert(mesh->vertices, j);  
+            if ( halfspace_point(supporting_pt, normal, vert) > EPSILON ) {
+                strcpy(mesh_type, "\033[1;31mconcave\033[0m");
+                failed = true;
+                break;
+            }
+        } 
+        // PRINT(i);
+        // print_vec(normal);
+        // print_vec(supporting_pt);   
     }
+    if (!failed)
+        strcpy(mesh_type, "convex");
+    
 
     printf("model '%s' loaded with %d %s mesh%s ", mfile, mesh_count, mesh_type, mesh_count > 1 ? "es":"" );
     printf("of %d triangles\n", mesh->triangleCount);
