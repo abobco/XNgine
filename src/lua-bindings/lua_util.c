@@ -22,7 +22,6 @@ XN_GameState create_XN_GameState( XN_SETTINGS *settings) {
     newgame.settings = settings;
 
     newgame.modelSet.count = 0;
-    newgame.animSet = malloc( sizeof( AnimationSet ) * 64 );
     return newgame;
 }
 

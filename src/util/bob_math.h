@@ -33,6 +33,11 @@ Vector2 transform_vec2( Vector2 p, Vector2 origin, float angle );
 
 float dot(Vector2 a, Vector2 b); 
 
+typedef struct Plane {
+    Vector3 point;
+    Vector3 normal;
+} Plane;
+
 int convex_poly_collision( Vector2* a, int a_n, Vector2 *b, int b_n );
 
 int convex_poly_circle_collision(Vector2 *a, int a_n, Vector2 b_cen, float radius);

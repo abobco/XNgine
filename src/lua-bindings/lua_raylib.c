@@ -483,37 +483,97 @@ int lua_loadModel( lua_State *L ) {
     m->models[m->count] = LoadModel(mfile);
     int mesh_count = m->models[m->count].meshCount;
     Mesh *mesh = &m->models[m->count].meshes[0];
-    char mesh_type[32] = "";
 
     // O(n^2) polyhedron convexity test
     // TODO: replace w/ O(n) centroid method
-    bool failed = false;
-    for ( int i=0; i < mesh->triangleCount && !failed; i++ ) {
+    bool is_convex = true;
+    for ( int i=0; i < mesh->triangleCount && is_convex; i++ ) {
         unsigned int sup_idx = mesh->indices[i*3]*3;
         Vector3 supporting_pt = get_vert(mesh->vertices, sup_idx);        
         Vector3 normal = get_vert(mesh->normals, sup_idx);  
 
-        for ( int j = 0; j < mesh->vertexCount; j+=3 ) {
+        for ( int j = 0; j < mesh->vertexCount && is_convex; j+=3 ) {
             Vector3 vert = get_vert(mesh->vertices, j);  
-            if ( halfspace_point(supporting_pt, normal, vert) > EPSILON ) {
-                strcpy(mesh_type, "\033[1;31mconcave\033[0m");
-                failed = true;
-                break;
-            }
-        } 
-        // PRINT(i);
-        // print_vec(normal);
-        // print_vec(supporting_pt);   
+            if ( halfspace_point(supporting_pt, normal, vert) > EPSILON )
+                is_convex = false;
+        }  
     }
-    if (!failed)
-        strcpy(mesh_type, "convex");
-    
 
+    // get local bounds for separating axis tests
+    if (is_convex) {
+        struct PlaneNode { 
+            Plane plane; 
+            struct PlaneNode *next; 
+        };
+        struct PlaneNode *bounds_list = NULL;
+        struct PlaneNode *p_iter = bounds_list;
+        int plane_count = 0;
+
+        // get a temp linked list of unique planes from the triangle mesh
+        for ( int i=0; i < mesh->triangleCount; i++ ) {
+            unsigned int sup_idx = mesh->indices[i*3]*3;
+            Plane new_plane = {get_vert(mesh->vertices, sup_idx),  get_vert(mesh->normals, sup_idx)};
+            bool unique = true;
+            
+            // reject if new_plane's position lies on any previous plane & shares a normal w/ that plane 
+            p_iter = bounds_list;
+            while ( p_iter != NULL && unique ) {
+                if ( fabsf( halfspace_point( p_iter->plane.point, p_iter->plane.normal, new_plane.point ) ) < EPSILON 
+                  && fabsf( Vector3DotProduct( p_iter->plane.normal, new_plane.normal ) - 1.0f ) < EPSILON ) {
+                    unique = false;
+                }
+                p_iter = p_iter->next;
+            }
+            if ( !unique ) continue;   
+
+            // insert new plane
+            struct PlaneNode *new_node = (struct PlaneNode*) malloc(sizeof(struct PlaneNode));
+            p_iter = bounds_list;
+            new_node->plane =  new_plane;
+            new_node->next = NULL;
+            plane_count++;
+            if ( bounds_list == NULL ) {
+                bounds_list = new_node;
+                continue;
+            }
+            while ( p_iter->next != NULL ) {  
+                p_iter = p_iter->next;
+            }   
+            p_iter->next = new_node;
+        }
+
+        // copy to global array of physics data
+        PlaneSet *bounds = &m->convexMeshBounds[m->count];
+        bounds->planes = malloc( sizeof(Plane) * plane_count );
+        bounds->count = 0;
+        p_iter = bounds_list;
+        while( p_iter != NULL ) {
+            bounds->planes[bounds->count++] = p_iter->plane;
+            p_iter = p_iter->next;
+        }
+
+        // free temp list
+        while ( bounds_list != NULL) {
+            p_iter=bounds_list;
+            bounds_list = bounds_list->next;
+            free(p_iter);
+        }
+
+        // for ( int i = 0; i < bounds->count; i++ ) {
+        //     print(i);
+        //     print_vec(bounds->planes[i].point);
+        //     print_vec(bounds->planes[i].normal);
+        // }
+    }
+
+    char mesh_type[32] = "";
+    if (is_convex) strcpy(mesh_type, "convex");
+    else           strcpy(mesh_type, "\033[1;31mconcave\033[0m");
     printf("model '%s' loaded with %d %s mesh%s ", mfile, mesh_count, mesh_type, mesh_count > 1 ? "es":"" );
     printf("of %d triangles\n", mesh->triangleCount);
     
     lua_pushinteger(L, m->count++);
-    
+
     return 1;
 }
 

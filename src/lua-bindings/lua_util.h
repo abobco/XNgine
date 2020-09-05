@@ -27,8 +27,16 @@ typedef struct XN_SETTINGS {
     char _WEBSOCKET_DOMAIN[124];
 } XN_SETTINGS;
 
+#define LUA_SET_SIZE 64
+
+typedef struct PlaneSet {
+    Plane *planes;
+    int count;
+} PlaneSet;
+
 typedef struct ModelSet {
-    Model models[64];
+    Model models[LUA_SET_SIZE];
+    PlaneSet convexMeshBounds[LUA_SET_SIZE];
     int count;
 } ModelSet;
 
@@ -41,7 +49,7 @@ typedef struct AnimationSet {
 typedef struct XN_GameState {
     XN_SETTINGS *settings;
     ModelSet modelSet;
-    AnimationSet *animSet;
+    AnimationSet animSet[LUA_SET_SIZE];
 } XN_GameState;
 
 typedef struct FloatArray {
