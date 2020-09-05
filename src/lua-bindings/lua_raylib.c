@@ -2,6 +2,8 @@
 #include "raymath.h"
 #include "raylib.h"
 
+#include "../graphics/renderer.h"
+
 // Setup canvas (framebuffer) to start drawing 
 int lua_BeginDrawing( lua_State *L ) {
     BeginDrawing();
@@ -480,9 +482,36 @@ int lua_loadModel( lua_State *L ) {
 
     ModelSet *m =  &get_gamestate()->modelSet;
     m->models[m->count] = LoadModel(mfile);
-    printf("model loaded with %d meshes\n", m->models[m->count].meshCount);
-    lua_pushinteger(L, m->count++);
+    int mesh_count = m->models[m->count].meshCount;
+    printf("model loaded with %d mesh%s ", mesh_count, mesh_count > 1 ? "es":"" );
 
+    Mesh *mesh = &m->models[m->count].meshes[0];
+    printf("and %d triangles\n", mesh->triangleCount);
+    
+    lua_pushinteger(L, m->count++);
+    
+    // O(n^2) polyhedron convexity test
+    // TODO: replace w/ O(n) centroid method
+    if ( mesh->vertexCount > 512 )
+        return 1;
+    for ( int i=0; i < mesh->triangleCount; i++ ) {
+        unsigned short sup_idx = mesh->indices[i*3]*3;
+        Vector3 supporting_pt = get_vert(mesh->vertices, sup_idx);        
+        Vector3 normal = get_vert(mesh->normals, sup_idx);  
+
+        for ( int j = 0; j < mesh->vertexCount; j+=3 ) {
+            Vector3 vert = get_vert(mesh->vertices, j);  
+            if ( halfspace_point(supporting_pt, normal, vert) > EPSILON ) {
+                 printf("concave mesh\n");
+                 return 1;
+            }
+        } 
+        // PRINT(i);
+        // print_vec(normal);
+        // print_vec(supporting_pt);   
+    }
+    printf("\n");
+    printf("convex mesh\n");
     return 1;
 }
 
@@ -631,10 +660,7 @@ int lua_DrawCubeTexture( lua_State *L ) {
 int lua_loadCubeModel( lua_State *L) {
     Vector3 scale = lua_getVector3(L, 1);
     Mesh cube_mesh = GenMeshCube( scale.x, scale.y, scale.z);
-    // for ( int i =0; i < cube_mesh.vertexCount*3; i+=3 ) {
-    //     cube_mesh.vertices[i+1] -= 100;
-    //     // printf("%f\n", cube_mesh.vertices[i+1]);
-    // } 
+
     ModelSet* m = &get_gamestate()->modelSet;
     m->models[m->count] = LoadModelFromMesh(cube_mesh);
 

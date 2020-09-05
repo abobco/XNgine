@@ -10,8 +10,10 @@ extern "C" {
 #include "../../build/_deps/lua-5.4.0/install/include/lauxlib.h"
 #include "../../build/_deps/lua-5.4.0/install/include/lualib.h"
 #include "../graphics/particles.h"
+#include "../util/bob_math.h"
 
 #define PRINT(a) printf(#a " = %d\n", a)
+#define print(a) printf(#a " = %d\n", a)
 
 typedef struct XN_SETTINGS {
     // debug log option

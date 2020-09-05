@@ -19,6 +19,8 @@ extern "C" {
 // #define MAX_BATCH_ELEMENTS  8192
 #define DEFAULT_BATCH_BUFFER_ELEMENTS  1024
 
+#define get_vert(vert_arr, i) (Vector3) {vert_arr[i], vert_arr[i+1], vert_arr[i+2]}
+
 typedef struct PostProcessingFilter {
     RenderTexture2D render_target;
     Shader shader;
