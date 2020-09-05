@@ -51,7 +51,7 @@ int main(int argc, const char **argv)
 
     char *settings_file;
     if ( argc > 2 ) {
-        settings_file = malloc(strlen(argv[2]));
+        settings_file =  (char *) malloc(strlen(argv[2]));
         strcpy(settings_file, argv[2]);
     } else {
         // load default settings file
@@ -71,7 +71,7 @@ int main(int argc, const char **argv)
 
         // copy path to main XNgine folder
         readlink("/proc/self/exe", buf, 512);
-        settings_file = malloc(pos + strlen(relpath));
+        settings_file = (char *) malloc(pos + strlen(relpath));
         strcpy(settings_file, buf);
         settings_file[pos] = 0;
         strcat(settings_file, relpath); // append relative path to settings

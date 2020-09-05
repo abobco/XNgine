@@ -105,4 +105,4 @@ macro(XN_Build project_name src_file)
 endmacro()
 
 XN_Build( XNgine src/main.c )
-# XN_Build( XNgine++ src/main.cpp )
+XN_Build( XNgine++ src/main.cpp )
