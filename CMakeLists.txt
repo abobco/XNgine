@@ -69,16 +69,16 @@ FetchContent_Declare(
 
 project(XNlib)
 
-set( xnlib  src/util/bob_math.c src/util/collisions.c src/util/file_io.c ${raylib_BINARY_DIR}/src/raylib.h)
+set( xnlib  src/util/bob_math.h src/util/bob_math.c src/util/collisions.c src/util/file_io.c ${raylib_BINARY_DIR}/src/raylib.h )
 list(APPEND xnlib src/servers/message_queue.c src/util/input.c src/servers/bt/gamepad_server.c) 
 list(APPEND xnlib src/graphics/particles.c src/graphics/renderer.c)
 set( lb src/lua-bindings )
 # ${lb}/lua_snake.c 
-list(APPEND xnlib ${lb}/lua_util.c ${lb}/lua_raylib.c ${lb}/lua_server.c ${lb}/lua_particles.c ${lb}/lua_physics.c )
+list(APPEND xnlib ${lb}/lua_util.h ${lb}/lua_util.c ${lb}/lua_raylib.c ${lb}/lua_server.c ${lb}/lua_particles.c ${lb}/lua_physics.c )
 
 link_directories(build/_deps/raylib-build/src)
 
-add_library(xnlib-fn SHARED ${xnlib} )
+add_library(xnlib-fn STATIC ${xnlib} )
 
 # ========================================================================================
 

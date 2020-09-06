@@ -23,6 +23,8 @@ extern "C" {
 #include "raylib.h"
 
 #include "bob_math.h"
+
+#include "../lua-bindings/lua_util.h"
 // #include "../snake.h"
 
 

@@ -60,9 +60,9 @@ void update_particles(EmitterInfo *emitter, int n ) {
     for ( int i = 0; i < emitter->num_particles; i++ ) {
         ParticleInfo* p = &(emitter->particles[i]);
 
-        p->position = add_vec2(p->position, p->velocity);
+        p->position = Vector2Add(p->position, p->velocity);
 
-        p->velocity = lerp_vec2( (Vector2) {0,0}, p->velocity, emitter->d_speed);
+        p->velocity = Vector2Lerp( (Vector2) {0,0}, p->velocity, emitter->d_speed);
 
         if ( p->scale > 0.2f )
             p->scale = lerp(0.0f, p->scale,  emitter->d_scale);

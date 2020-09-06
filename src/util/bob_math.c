@@ -1,65 +1,12 @@
 #include "bob_math.h"
 
-// returns a random float between 0 & 1
-float rand_float() {
-    return (float)rand() / (float)(RAND_MAX);
-}
-
-float lerp(float a, float b, float t) {
-    return a*t + b*(1.0f - t);
-}
-
-float mag_sqr(Vector2 input) {
-    return input.x*input.x + input.y*input.y;
-}
-
-float mag(Vector2 input) {
-    return sqrtf(mag_sqr(input));
-}
-
-Vector2 normalize(Vector2 input) {  
-    float length = mag(input);
-    if ( length > EPSILON )
-        return (Vector2) { input.x / length, input.y / length};
-    else // this should probably just return null instead
-        return (Vector2) {0.0f,0.0f};
-}
-
-Vector2 add_vec2(Vector2 a, Vector2 b) {
-    return (Vector2) {
-        a.x + b.x,
-        a.y + b.y
-    };
-}
-
-Vector2 sub_vec2(Vector2 a, Vector2 b) {
-    return (Vector2) {
-        a.x - b.x,
-        a.y - b.y
-    };
-}
-
-Vector2 lerp_vec2(Vector2 a, Vector2 b, float t) {
-    return (Vector2) {
-        lerp(a.x, b.x, t),
-        lerp(a.y, b.y, t)
-    };
-}
-
-Vector2 transform_vec2( Vector2 p, Vector2 origin, float angle ) {
-    float c = cosf(angle);
-    float s = sinf(angle);
-    
-    float tx = c*p.x - s*p.y;
-    float ty = s*p.x + c*p.y;
-    Vector2 res = { origin.x + tx, origin.y + ty};
-    return res;
-}
-
-float dot(Vector2 a, Vector2 b) {
-    return a.x*b.x + a.y*b.y;
-}
-
+Vector3 inv_transform_point( Vector3 point, Transform t );
+Vector3 transform_point( Vector3 point, Transform t );
+float halfspace_point( Vector3 plane, Vector3 normal, Vector3 point );
+bool point_in_AABB( Vector3 p, BoundingBox b );
+Vector2 transform_vec2( Vector2 p, Vector2 origin, float angle );
+float lerp(float a, float b, float t);
+float rand_float();
 
 // 2d perlin noise algo from  https://gist.github.com/nowl/828013
 static const int  SEED = 1985;

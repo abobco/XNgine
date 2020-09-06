@@ -15,7 +15,7 @@ struct Maxima projection_test(Vector2 *p, int n_sides, Vector2 axis) {
     struct Maxima m = { FLT_MAX, -FLT_MAX };
 
     for ( int i = 0; i < n_sides; i++ ) {
-        float a1 = dot(p[i], axis);
+        float a1 = Vector2DotProduct(p[i], axis);
         
         // printf("a1: %f\n", a1);
         if ( a1 < m.min )
@@ -50,7 +50,7 @@ int convex_poly_collision( Vector2* a, int a_n, Vector2 *b, int b_n ) {
             -(a[i+1].y - a[i].y),
             a[i+1].x - a[i].x
         };
-        axis = normalize(axis);
+        axis = Vector2Normalize(axis);
         res = sep_axis_test(a, a_n, b, b_n, axis);
         if ( res == 0 )
             return 0;
@@ -59,7 +59,7 @@ int convex_poly_collision( Vector2* a, int a_n, Vector2 *b, int b_n ) {
       -(a[0].y - a[a_n-1].y),
         a[0].x - a[a_n-1].x
     };
-    res = sep_axis_test(a, a_n, b, b_n, normalize(axis_la));
+    res = sep_axis_test(a, a_n, b, b_n, Vector2Normalize(axis_la));
     if ( res == 0 )
         return 0;
 
@@ -69,7 +69,7 @@ int convex_poly_collision( Vector2* a, int a_n, Vector2 *b, int b_n ) {
             -(b[i+1].y - b[i].y),
             b[i+1].x - b[i].x
         };
-        axis = normalize(axis);
+        axis = Vector2Normalize(axis);
         res = sep_axis_test(b, b_n, a,a_n, axis);
         if ( res == 0 )
             return 0;
@@ -78,7 +78,7 @@ int convex_poly_collision( Vector2* a, int a_n, Vector2 *b, int b_n ) {
           b[0].y - b[b_n-1].y,
         -(b[0].x - b[b_n-1].x)
     };
-    res = sep_axis_test(a, a_n, b, b_n, normalize(axis_lb));
+    res = sep_axis_test(a, a_n, b, b_n, Vector2Normalize(axis_lb));
     if ( res == 0 )
         return 0;
     
@@ -86,7 +86,7 @@ int convex_poly_collision( Vector2* a, int a_n, Vector2 *b, int b_n ) {
 }
 
 static struct Maxima circ_proj_test(Vector2 c, float r, Vector2 axis) {  
-    float c_proj = dot(c, axis);
+    float c_proj = Vector2DotProduct(c, axis);
     struct Maxima m = { c_proj - r, c_proj + r };
     return m;
 }
@@ -114,14 +114,14 @@ int convex_poly_circle_collision(Vector2 *a, int a_n, Vector2 b_cen, float radiu
     for ( int i = 0; i < a_n; i++ ) {
         Vector2 d = { a[i].x - b_cen.x, a[i].y - b_cen.y };
         
-        float d_sqr = mag_sqr(d);
+        float d_sqr = Vector2LengthSqr(d);
         if ( d_sqr < closest_d ) {
             closest_d = d_sqr;
             circ_axis = d;
         }
     }
-    // res = circ_sep_axis_test(a, a_n, b_cen, radius, normalize(circ_axis));
-    res = circ_sep_axis_test(a, a_n, b_cen, radius, normalize(circ_axis));
+    // res = circ_sep_axis_test(a, a_n, b_cen, radius, Vector2Normalize(circ_axis));
+    res = circ_sep_axis_test(a, a_n, b_cen, radius, Vector2Normalize(circ_axis));
     if ( res == 0 )
         return 0;
 
@@ -131,7 +131,7 @@ int convex_poly_circle_collision(Vector2 *a, int a_n, Vector2 b_cen, float radiu
             -(a[i+1].y - a[i].y),
             a[i+1].x - a[i].x
         };
-        axis = normalize(axis);
+        axis = Vector2Normalize(axis);
         res = circ_sep_axis_test(a, a_n, b_cen, radius, axis);
         if ( res == 0 )
             return 0;
@@ -141,30 +141,11 @@ int convex_poly_circle_collision(Vector2 *a, int a_n, Vector2 b_cen, float radiu
         a[0].x - a[a_n-1].x
     };
     // res = circ_sep_axis_test(a, a_n, b_cen, radius, axis);
-    res = circ_sep_axis_test(a, a_n, b_cen, radius, normalize(axis));
+    res = circ_sep_axis_test(a, a_n, b_cen, radius, Vector2Normalize(axis));
     if ( res == 0 )
         return 0;
 
     return res;
-}
-
-bool point_in_AABB( Vector3 p, BoundingBox b ) {
-    if ( p.x > b.min.x && p.y > b.min.y && p.z > b.min.z 
-      && p.x < b.max.x && p.y < b.max.y && p.z < b.max.z )
-      return true;
-    return false;
-}
-
-Vector3 transform_point( Vector3 point, Transform t ) {
-    Vector3 scratch = Vector3Multiply(point, t.scale);
-    scratch = Vector3RotateByQuaternion(scratch, t.rotation);
-    return Vector3Add(point, scratch);
-}
-
-Vector3 inv_transform_point( Vector3 point, Transform t ) {
-    Vector3 scratch = Vector3Subtract(point, t.translation);
-    scratch = Vector3RotateByQuaternion(scratch, QuaternionInvert(t.rotation));
-    return Vector3Multiply( scratch, (Vector3) { 1/t.scale.x, 1/t.scale.y, 1/t.scale.z } );
 }
 
 static void clamp_to_bound(float *m, Vector3 *b, Vector3 *d ) {
@@ -184,11 +165,6 @@ static void clamp_to_bound(float *m, Vector3 *b, Vector3 *d ) {
         disp = (Vector3) { 0, 0, bound.z };
     }
     *m = minval; *d = disp;
-}
-
-float halfspace_point( Vector3 plane, Vector3 normal, Vector3 point ) {
-    Vector3 plane_to_point = Vector3Subtract(point, plane);
-    return Vector3DotProduct(normal, plane_to_point);
 }
 
 // returns a displacement vector for the collision
