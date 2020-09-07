@@ -1,6 +1,7 @@
 
 **/*-src
 **/*-subbuild
+**/asm
 **/logs
 **/old-shit
 **CMakeCache.txt

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include "../util/bob_math.h"
+#include "rlgl.h"
 
 // draw player 1's gamepad values to the screen for debugging
 void draw_gamepad_state(GamepadNumber gp) {
@@ -55,14 +56,39 @@ void draw_particles(EmitterInfo* emitter) {
     }
 }
 
+void draw_model_wires(Model* model, Vector3 position, Color color) {
+        rlTranslatef(position.x, position.y, position.z);
+        //rlRotatef(45, 0, 1, 0);
+
+        rlBegin(RL_LINES);
+            rlColor4ub(color.r, color.g, color.b, color.a);
+            for ( int i = 0; i < model->meshCount; i++ ) {
+                for ( int j = 0; j < model->meshes[i].triangleCount; j++ ) {
+                   unsigned int tri_idx = model->meshes[i].indices[j*3]*3;
+                    Vector3 v1 = get_vert(model->meshes[i].vertices, tri_idx);
+                    Vector3 v2 = get_vert(model->meshes[i].vertices, tri_idx+1);
+                    Vector3 v3 = get_vert(model->meshes[i].vertices, tri_idx+2);
+
+                    rlVertex3f(v1.x, v1.y, v1.z);
+                    rlVertex3f(v2.x, v2.y, v2.z);
+
+                    rlVertex3f(v1.x, v1.y, v1.z);
+                    rlVertex3f(v3.x, v3.y, v3.z);
+
+                    rlVertex3f(v2.x, v2.y, v2.z);
+                    rlVertex3f(v3.x, v3.y, v3.z);
+                }
+            }           
+        rlEnd();
+    rlPopMatrix();
+}
+
 void draw_scene(TerminalInfo* terminal) {
     XN_GameState *g = get_gamestate();
-
     BeginDrawing();
     ClearBackground((Color) {30, 30, 30, 255});
 
     lua_check_script_function(terminal->L, "_draw");
-    
     // draw lua terminal
     if ( terminal->isOpen ) {
         DrawRectangle( 0, 0, g->settings->_SCREEN_WIDTH, 120, (Color) {30, 30, 30, 150} );

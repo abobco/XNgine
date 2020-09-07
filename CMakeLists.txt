@@ -94,15 +94,17 @@ macro(XN_Build project_name src_file)
   add_executable(${PROJECT_NAME}  ${src_file} )
 
   # include_directories(build/_deps/libwebsockets-build/include ${raylib_BINARY_DIR}/src ${CMAKE_SYSROOT}/usr/include/lua5.1) # default raspi lua build
-  include_directories(build/_deps/libwebsockets-build/include ${raylib_BINARY_DIR}/src build/_deps/lua-5.4.0/install/include) # compound assignment lua5.4 build
+  include_directories(build/_deps/libwebsockets-build/include ${raylib_BINARY_DIR}/src ${raylib_BINARY_DIR}/src/external build/_deps/lua-5.4.0/install/include) # compound assignment lua5.4 build
   find_library( LUA54 NAMES "lua" PATHS ${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/lua-5.4.0/install/lib NO_DEFAULT_PATH)
 
   # cross compiler stuff
   set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
   set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "./")
-  target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn )
-  # target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn profiler)
+  # target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn )
+  target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn profiler)
 endmacro()
 
 XN_Build( XNgine src/main.c )
 XN_Build( XNgine++ src/main.cpp )
+XN_Build( XNgl src/graphics/egl/egl_tests.c )
+# set(CMAKE_C_FLAGS " ${CMAKE_C_FLAGS} -lglfw3 -lopengl32 -lgdi32 -Wall")

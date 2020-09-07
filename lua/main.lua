@@ -24,9 +24,9 @@ end
 
 function Transform:setEulers(euler_angles)
     self.eulers = euler_angles
-    for k, v in pairs(Transform.axes) do
-        self.axes[k] = vec_rotate_euler( v, self.eulers )
-    end
+    -- for k, v in pairs(Transform.axes) do
+    --     self.axes[k] = vec_rotate_euler( v, self.eulers )
+    -- end
 end
 
 function Transform:transformPoint(point)
@@ -118,9 +118,8 @@ function sep_axis(sides, sphere)
         local closest_pt_on_sphere = vec_scale(vec_neg(side.normal), sphere.radius)
         closest_pt_on_sphere = vec_add(closest_pt_on_sphere, sphere.position)
         local d = halfspace_distance(side.point, side.normal, closest_pt_on_sphere)
-        if d > 0 then
-            sphere.inbounds = false
-            return
+        
+        if d > 0 then return false
         elseif d > closest_d then
             closest_d = d
             closest_side = side
@@ -135,9 +134,10 @@ score = 0
 curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
-ground = Box:new(vec(0,8, 0), vec(1, 1, 1), vec(0,0,0), load_model("../models/lowcube.iqm"))
-ramp = Box:new(ground.position, vec(1, 1, 1), vec(0,3,0), load_model("../models/triangular_prism.iqm"))
-cat = Box:new(vec(0, 8, 3), vec(1, 1, 1), vec(0,1,0), load_model("../models/concave_cat.iqm"))
+-- cat = Box:new(vec(0, 8, 3), vec(1, 1, 1), vec(0,1,0), load_model("../models/concave_cat.iqm"))
+ground = Box:new(vec(0,8, 0), vec(1, 1, 1), vec(0,0,0), load_model("../models/phys_level.iqm"))
+level2 = Box:new(vec(-6, 11, -12.5), vec(1, 1, 1), vec(0,0,0), load_model("../models/lowcube.iqm"))
+obstacles = { ground, level2 }
 
 ball = Sphere:new(vec_add(ground.position, vec(0,6,0)), 0.5)
 ball.inbounds = true
@@ -153,67 +153,66 @@ cam = Camera:new( vec(cam_orb_rad, ground.position.y+16, 0),     -- position
                   vec(0,  1, 0) )                                -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
 
--- light_shader = load_shader("../shaders/base_lighting.vs", "../shaders/lighting.fs")
+function cam:set_orbit(angle, radius)
+    cam.position.x = cam.target.x + cos(angle)*radius
+    cam.position.z = cam.target.z + sin(angle)*radius
+end
 
 -- _fixedUpdate() is called at 60 hz
 function _fixedUpdate()
-    -- get sets of intersecting planes defining the collision meshes
-    local bodies = {
-        {obj=ground, bounds=get_halfspace_bounds(ground.model)},
-        {obj=ramp, bounds=get_halfspace_bounds(ramp.model)}
-    }
-    
-    -- transform to world space
-    for k, v in pairs(bodies) do
-        for mk, mv in pairs(v.bounds) do
-            mv.point = v.obj.local_transform:transformPoint(mv.point)
-            mv.point = v.obj.world_transform:transformPoint(mv.point)
-            mv.normal = vec_rotate_euler(mv.normal, v.obj.local_transform.eulers)
-            mv.normal = vec_rotate_euler(mv.normal, v.obj.world_transform.eulers)
-        end
-    end
-
-    -- separating axis overlap tests
-    local results = {}
-    for k, v in pairs(bodies) do
-        results[k] = sep_axis(v.bounds, ball)
-    end
-    local closest = nil
-    for k, v in pairs(results) do
-        if v and ( not closest or v.d > closest.d ) then
-            closest = v
-        end
-    end
-
-    if closest then
-        -- collision response
-        local plane_to_sphere = vec_scale(closest.s.normal, closest.d)
-        ball.position = vec_sub(ball.position, plane_to_sphere) 
-        ball.inbounds = true
-        if vec_dot(ball.vel, closest.s.normal) < 0 then
-            ball.vel = vec_rej(ball.vel, closest.s.normal)
-        end
-        ball.col_side = closest.s
-    end
-
     -- physics update
-    if ball.inbounds then 
-        ball.vel = vec_add(ball.vel, vec_rej(gravity, ball.col_side.normal))
-    else 
-        ball.vel.y += gravity.y
-    end
+    ball.vel.y += gravity.y
     ball.position = vec_add(ball.position, ball.vel)
 
+    -- respawn check
     if ball.position.y < spawn_plane then
         ball.position = vec(spawn_pos.x, spawn_pos.y, spawn_pos.z)
         score = 0
         ball.vel = vec(0, ball.vel.y, 0)
     end 
 
+    -- get sets of intersecting planes defining the collision meshes
+    local bodies = {}
+    for k, v in pairs(obstacles) do
+        bodies[k] = {obj=v, bounds=get_halfspace_bounds(v.model)}
+    end
+    
+    -- transform to world space
+    for k, v in pairs(bodies) do
+        for mk, mv in pairs(v.bounds) do
+            for mmk, mmv in pairs(mv) do
+                mmv.point = v.obj.local_transform:transformPoint(mmv.point)
+                mmv.point = v.obj.world_transform:transformPoint(mmv.point)
+                mmv.normal = vec_rotate_euler(mmv.normal, v.obj.local_transform.eulers)
+                mmv.normal = vec_rotate_euler(mmv.normal, v.obj.world_transform.eulers)
+            end
+        end
+    end
+
+    -- separating axis overlap tests
+    local inbounds = false
+    collision_count = 0
+    for k, v in pairs(bodies) do
+        for mk, mv in pairs(v.bounds) do
+            local results = sep_axis(mv, ball)
+            if results then
+                collision_count+=1
+                inbounds = true
+                local plane_to_sphere = vec_scale(results.s.normal, results.d)
+                ball.position = vec_sub(ball.position, plane_to_sphere)
+                if vec_dot(ball.vel, results.s.normal) < 0 then
+                    ball.vel = vec_rej(ball.vel, results.s.normal)
+                end
+                ball.col_side = results.s
+            end
+        end
+    end
+    ball.inbounds = inbounds
     score += 1
 end
 
 -- _draw() is called once every frame update
+correction_ang = 0
 function _draw()
     -- handle input
     local msglist = server.pop() 
@@ -221,25 +220,36 @@ function _draw()
         local msg = msglist:get(i)
         if msg.type == MSG_MOTION_VECTOR then
             if msg.id == 0 then
-                cam.position.x = cos(msg.x*2)*cam_orb_rad
-                cam.position.z = sin(msg.x*2)*cam_orb_rad
-                curr_evt = vec(msg.x*2, msg.y*2, msg.z*2)
+                local scale = 2
+                if abs(curr_evt.z+msg.z*2) < 0.1 and abs(curr_evt.y -msg.y*2) > pi/4 then correction_ang += pi end
+
+                curr_evt = vec_scale( vec(msg.x, msg.y, msg.z), scale)
+                -- if  abs(curr_evt.y) > pi/2 then curr_evt.y +=pi curr_evt.z+=pi end
             end
         end
     end
-    ground.world_transform:setEulers( vec(-curr_evt.z - pi/2, 0, curr_evt.y) )
-    ramp.world_transform:setEulers( vec(-curr_evt.z - pi/2, 0, curr_evt.y) )
-    model_rotate_euler(ground.model, curr_evt.z + pi/2, 0, -curr_evt.y)
-    model_rotate_euler(ramp.model, curr_evt.z + pi/2, 0,  -curr_evt.y)
+    -- print_vec(curr_evt, "evt")
+    
+    for k, v in pairs(obstacles) do 
+        v.world_transform:setEulers( vec(-curr_evt.y - pi/2, -correction_ang, -curr_evt.z ) )
+        model_rotate_euler(v.model, curr_evt.y + pi/2, correction_ang, curr_evt.z)
+    end
+    
+    cam.target = ball.position
+    cam:set_orbit(pi/2, cam_orb_rad)
 
     -- draw scene
     begin_3d_mode(cam)
     draw_grid(40, 1)
     ground:draw(BEIGE)
-    ramp:draw(MAROON)
+    level2:draw(MAROON)
     ball:draw(ORANGE)
     end_3d_mode()
 
     draw_fps()
+    local function round(num)
+        return floor(num*100)/100
+    end
     draw_text("score: "..score, screen_center.x-40, 20, 20, RED)
+    -- draw_text("evt: "..round(curr_evt.x)..", "..round(curr_evt.y)..", "..round(curr_evt.z), screen_center.x-40, 40, 20, RED)
 end

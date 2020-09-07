@@ -38,6 +38,8 @@ void draw_particles(EmitterInfo* emitter);
 
 void fill_tex(RenderTexture2D tex, Color color);
 
+void draw_model_wires(Model* model, Vector3 position, Color color);
+
 #ifdef __cplusplus
 }
 #endif

@@ -22,6 +22,9 @@ XN_GameState create_XN_GameState( XN_SETTINGS *settings) {
     newgame.settings = settings;
 
     newgame.modelSet.count = 0;
+    Image checkerImage = GenImageChecked(128, 128, 4, 4, DARKGRAY, WHITE);
+    newgame.defaultTexture = LoadTextureFromImage(checkerImage);
+    SetTextureWrap(newgame.defaultTexture, WRAP_REPEAT);
     return newgame;
 }
 

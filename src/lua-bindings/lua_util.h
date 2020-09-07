@@ -29,14 +29,21 @@ typedef struct XN_SETTINGS {
 
 #define LUA_SET_SIZE 64
 
+
+
 typedef struct PlaneSet {
     Plane *planes;
     int count;
 } PlaneSet;
 
+typedef struct MeshSet {
+    PlaneSet *meshes;
+    int count;
+} MeshSet;
+
 typedef struct ModelSet {
     Model models[LUA_SET_SIZE];
-    PlaneSet convexMeshBounds[LUA_SET_SIZE];
+    MeshSet convexMeshBounds[LUA_SET_SIZE];
     int count;
 } ModelSet;
 
@@ -50,6 +57,7 @@ typedef struct XN_GameState {
     XN_SETTINGS *settings;
     ModelSet modelSet;
     AnimationSet animSet[LUA_SET_SIZE];
+    Texture defaultTexture;
 } XN_GameState;
 
 typedef struct FloatArray {
