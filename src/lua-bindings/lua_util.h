@@ -188,8 +188,9 @@ int lua_DrawCubeV( lua_State *L ); // Draw cube (Vector version)
 int lua_loadCubeModel( lua_State *L);
 
 // physics
+int lua_rotateVectorByQuaternion( lua_State *L );
+int lua_QuaternionFromEuler( lua_State *L );
 int lua_rotateVectorEulers( lua_State *L );
-int lua_collision_AABB_sphere( lua_State *L );
 int lua_getConvexMeshBounds( lua_State *L );
 
 // define lua host libraries
@@ -273,9 +274,10 @@ static const struct luaL_Reg lua_raylib[] = {
     { "draw_cube_texture", lua_DrawCubeTexture },
 	{ "draw_cube_wires", lua_DrawCubeWiresV },
 	{ "draw_cube", lua_DrawCubeV },
-    { "collision_aabb_sphere", lua_collision_AABB_sphere },
     { "load_cube_model", lua_loadCubeModel },
     { "vec_rotate_euler", lua_rotateVectorEulers },
+    { "vec_rotate_quaternion", lua_rotateVectorByQuaternion },
+    { "euler_to_quaternion", lua_QuaternionFromEuler },
     { "get_halfspace_bounds", lua_getConvexMeshBounds },
     {0,0}   // terminator 
 };

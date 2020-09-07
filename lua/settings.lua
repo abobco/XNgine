@@ -143,7 +143,8 @@ end
 
 function print_vec(a, name)
     name = name or ""
-    print(name, a.x, a.y, a.z)
+    if a.w then print(name, a.x, a.y, a.z, a.w)
+    else print(name, a.x, a.y, a.z) end
 end
 
 function vec_add(a, b)

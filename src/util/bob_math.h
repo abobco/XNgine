@@ -26,8 +26,6 @@ int convex_poly_circle_collision(Vector2 *a, int a_n, Vector2 b_cen, float radiu
 
 float perlin2d(float x, float y, float freq, int depth);
 
-Vector3 collision_AABB_sphere( Transform box, Vector3 cen, float r ); // returns a displacement vector for the collision in world space
-
 inline float rand_float() {
     return (float)rand() / (float)(RAND_MAX);
 }

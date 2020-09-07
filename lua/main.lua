@@ -3,6 +3,7 @@ dofile("../lua/util/3dcam.lua")
 Transform = {
     position = vec(0,0,0),
     eulers   = vec(0,0,0),
+    quaternion = vec(0,0,0,1),
     scale    = vec(1,1,1),
     axes = {
         right   = vec(1,0,0),
@@ -16,6 +17,7 @@ function Transform:new(pos, euler_angles, scale)
     setmetatable(o, {__index = self}) 
     o.position = pos or Transform.position
     o.eulers = euler_angles or Transform.eulers
+    o.quaternion = vec(0,0,0,1)
     o.scale = scale or Transform.scale
     o.axes = {}
     o:setEulers(o.eulers)
@@ -23,16 +25,26 @@ function Transform:new(pos, euler_angles, scale)
 end
 
 function Transform:setEulers(euler_angles)
-    self.eulers = euler_angles
-    -- for k, v in pairs(Transform.axes) do
-    --     self.axes[k] = vec_rotate_euler( v, self.eulers )
-    -- end
+    local new = false
+    for k, v in pairs(euler_angles) do
+        if v ~= self.eulers[k] then new = true break end
+    end
+    if new then 
+        self.eulers = euler_angles
+        self.quaternion = euler_to_quaternion(euler_angles)
+    end
+    -- print_vec(self.quaternion, "q:")
+
+    -- print_vec( vec_rotate_quaternion(vec(1,0,0), self.quaternion), "q:")
+    -- print_vec( vec_rotate_euler(vec(1,0,0), self.eulers), "e:")
 end
 
 function Transform:transformPoint(point)
     local ret = {}
     ret = vec( point.x*self.scale.x, point.y*self.scale.y, point.z*self.scale.z)
-    ret = vec_rotate_euler(ret, self.eulers)
+    ret = vec_rotate_quaternion(ret, self.quaternion)
+    -- ret = vec_rotate_euler(ret, self.eulers)
+    -- print_vec(self.quaternion, "q:")
     ret = vec_add(ret, self.position)
     return ret
 end
@@ -181,10 +193,9 @@ function _fixedUpdate()
     for k, v in pairs(bodies) do
         for mk, mv in pairs(v.bounds) do
             for mmk, mmv in pairs(mv) do
-                mmv.point = v.obj.local_transform:transformPoint(mmv.point)
                 mmv.point = v.obj.world_transform:transformPoint(mmv.point)
-                mmv.normal = vec_rotate_euler(mmv.normal, v.obj.local_transform.eulers)
                 mmv.normal = vec_rotate_euler(mmv.normal, v.obj.world_transform.eulers)
+                mmv.normal = vec_rotate_quaternion(mmv.normal, v.obj.world_transform.quaternion)
             end
         end
     end
@@ -247,9 +258,5 @@ function _draw()
     end_3d_mode()
 
     draw_fps()
-    local function round(num)
-        return floor(num*100)/100
-    end
     draw_text("score: "..score, screen_center.x-40, 20, 20, RED)
-    -- draw_text("evt: "..round(curr_evt.x)..", "..round(curr_evt.y)..", "..round(curr_evt.z), screen_center.x-40, 40, 20, RED)
 end

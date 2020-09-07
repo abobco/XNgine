@@ -6,7 +6,7 @@ Vector4 lua_getVector4( lua_State *L, int table_stack_idx) {
     q.x = lua_checkFloatField(L, "x", table_stack_idx);
     q.y = lua_checkFloatField(L, "y", table_stack_idx);
     q.z = lua_checkFloatField(L, "z", table_stack_idx);
-    q.z = lua_checkFloatField(L, "w", table_stack_idx);
+    q.w = lua_checkFloatField(L, "w", table_stack_idx);
     return q;
 }
 
@@ -21,6 +21,14 @@ void lua_pushVector3(lua_State *L, Vector3 v) {
     lua_setFloatField(L, "x", v.x);
     lua_setFloatField(L, "y", v.y);
     lua_setFloatField(L, "z", v.z);
+}
+
+void lua_pushVector4( lua_State *L,  Vector4 v) {
+    lua_newtable(L);
+    lua_setFloatField(L, "x", v.x);
+    lua_setFloatField(L, "y", v.y);
+    lua_setFloatField(L, "z", v.z);
+    lua_setFloatField(L, "w", v.w);
 }
 
 Transform lua_getTransform( lua_State *L, int table_stack_idx ) {
@@ -66,23 +74,22 @@ int lua_getConvexMeshBounds( lua_State *L ) {
 int lua_rotateVectorEulers( lua_State *L ) {
     Vector3 vec = lua_getVector3(L, 1);
     Vector3 eul = lua_getVector3(L, 2);
-
+    
     Quaternion q = QuaternionFromEuler(eul.x, eul.y, eul.z);
-
     lua_pushVector3(L, Vector3RotateByQuaternion(vec, q));
-
     return 1;
 }
 
-// returns a displacement vector for the collision in world space 
-int lua_collision_AABB_sphere( lua_State *L ) { 
-    Transform box = lua_getTransform(L, 1);
-    Vector3 cen = lua_getVector3(L, 2);
-    float r = luaL_checknumber(L, 3);
+int lua_rotateVectorByQuaternion( lua_State *L ) {
+    Vector3 vec = lua_getVector3(L, 1);
+    Quaternion q = lua_getVector4(L, 2);
     
-    Vector3 disp = collision_AABB_sphere(box, cen, r);
-    print_vec(disp);
-    lua_pushVector3(L, disp);
-
+    lua_pushVector3(L, Vector3RotateByQuaternion(vec, q));
     return 1;
-} 
+}
+
+int lua_QuaternionFromEuler( lua_State *L ) {
+    Vector3 eul = lua_getVector3(L, 1);
+    lua_pushVector4(L, QuaternionFromEuler(eul.x, eul.y, eul.z));
+    return 1;
+}
