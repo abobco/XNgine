@@ -4,22 +4,16 @@ Transform = {
     position = vec(0,0,0),
     eulers   = vec(0,0,0),
     quaternion = vec(0,0,0,1),
-    scale    = vec(1,1,1),
-    axes = {
-        right   = vec(1,0,0),
-        up      = vec(0,1,0),
-        forward = vec(0,0,1)
-    }
+    scale    = vec(1,1,1)
 }
 
-function Transform:new(pos, euler_angles, scale)
+function Transform:new(pos, scale, euler_angles)
     local o = {}
     setmetatable(o, {__index = self}) 
     o.position = pos or Transform.position
     o.eulers = euler_angles or Transform.eulers
     o.quaternion = vec(0,0,0,1)
     o.scale = scale or Transform.scale
-    o.axes = {}
     o:setEulers(o.eulers)
     return o
 end
@@ -33,18 +27,12 @@ function Transform:setEulers(euler_angles)
         self.eulers = euler_angles
         self.quaternion = euler_to_quaternion(euler_angles)
     end
-    -- print_vec(self.quaternion, "q:")
-
-    -- print_vec( vec_rotate_quaternion(vec(1,0,0), self.quaternion), "q:")
-    -- print_vec( vec_rotate_euler(vec(1,0,0), self.eulers), "e:")
 end
 
 function Transform:transformPoint(point)
     local ret = {}
     ret = vec( point.x*self.scale.x, point.y*self.scale.y, point.z*self.scale.z)
     ret = vec_rotate_quaternion(ret, self.quaternion)
-    -- ret = vec_rotate_euler(ret, self.eulers)
-    -- print_vec(self.quaternion, "q:")
     ret = vec_add(ret, self.position)
     return ret
 end
@@ -62,32 +50,28 @@ function Plane:new(pos, normal)
     return o
 end
 
-Box = {
-    position=vec(0, 0, 0),
-    scale=vec(1,1,1)
+MeshSet = {
+    transform = Transform:new()
 }
 
-function Box:new(pos, scale, anchor, model)
+function MeshSet:new(pos, model, scale)
     local o = o or {}
     setmetatable(o, {__index = self}) 
-    o.world_transform = Transform:new(pos, vec(0, 0, 0), scale)
-    o.local_transform = Transform:new(anchor)
-    o.position = pos or Box.position
-    o.anchor = o.local_transform.position
-    o.scale = scale or Box.scale
-    o.model = model or load_cube_model(o.scale)
+    o.transform = Transform:new(pos, scale)
+    -- o.position = pos or MeshSet.position
+    -- o.scale = scale or MeshSet.scale
+    o.model = model or load_cube_model(o.transform.scale)
     return o
 end
 
-function Box:get_faces()
+function MeshSet:get_faces()
     local faces = {}
     return faces
 end
 
-function Box:draw(color)
+function MeshSet:draw(color)
     draw_model(self.model,
-               self.world_transform:transformPoint(self.local_transform.position),  
-            --    self.position,
+               self.transform.position,
                vec(1, 0, 0),    
                0,
                vec(1, 1, 1), 
@@ -146,21 +130,25 @@ score = 0
 curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
--- cat = Box:new(vec(0, 8, 3), vec(1, 1, 1), vec(0,1,0), load_model("../models/concave_cat.iqm"))
-ground = Box:new(vec(0,8, 0), vec(1, 1, 1), vec(0,0,0), load_model("../models/phys_level.iqm"))
-level2 = Box:new(vec(-6, 11, -12.5), vec(1, 1, 1), vec(0,0,0), load_model("../models/lowcube.iqm"))
-obstacles = { ground, level2 }
+-- cat = MeshSet:new(vec(0, 8, 3), vec(1, 1, 1), vec(0,1,0), load_model("../models/concave_cat.iqm"))
+ground = MeshSet:new(vec(0,8, 0),  load_model("../models/phys_level.iqm"))
+goal = MeshSet:new(vec(-14, 9.5, -9), load_model("../models/lowcube.iqm"))
+goal.transform:setEulers(vec(pi/2,0,0))
+model_rotate_euler(goal.model, pi/2, 0, 0)
 
-ball = Sphere:new(vec_add(ground.position, vec(0,6,0)), 0.5)
+obstacles = { ground, goal }
+rotating_objects = { ground }
+
+ball = Sphere:new(vec_add(ground.transform.position, vec(0,6,0)), 0.5)
 ball.inbounds = true
 ball.vel = vec(0,0,0)
 
-spawn_pos = vec( random()*2, ground.position.y+6, random()*2 )
+spawn_pos = vec( random()*2, ground.transform.position.y+6, random()*2 )
 spawn_plane = -5
 
 cam_ang_speed = 0
 cam_orb_rad = 16
-cam = Camera:new( vec(cam_orb_rad, ground.position.y+16, 0),     -- position
+cam = Camera:new( vec(cam_orb_rad, ground.transform.position.y+16, 0),     -- position
                   ground.position,                               -- target
                   vec(0,  1, 0) )                                -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
@@ -193,9 +181,8 @@ function _fixedUpdate()
     for k, v in pairs(bodies) do
         for mk, mv in pairs(v.bounds) do
             for mmk, mmv in pairs(mv) do
-                mmv.point = v.obj.world_transform:transformPoint(mmv.point)
-                mmv.normal = vec_rotate_euler(mmv.normal, v.obj.world_transform.eulers)
-                mmv.normal = vec_rotate_quaternion(mmv.normal, v.obj.world_transform.quaternion)
+                mmv.point = v.obj.transform:transformPoint(mmv.point)
+                mmv.normal = vec_rotate_quaternion(mmv.normal, v.obj.transform.quaternion)
             end
         end
     end
@@ -232,20 +219,21 @@ function _draw()
         if msg.type == MSG_MOTION_VECTOR then
             if msg.id == 0 then
                 local scale = 2
-                if abs(curr_evt.z+msg.z*2) < 0.1 and abs(curr_evt.y -msg.y*2) > pi/4 then correction_ang += pi end
-
+                -- filthy attempt to correct flipping in gimbal lock situations
+                if abs(curr_evt.z+msg.z*2) < 0.1 and abs(curr_evt.y -msg.y*2) > pi/4 then 
+                    correction_ang += pi 
+                end
                 curr_evt = vec_scale( vec(msg.x, msg.y, msg.z), scale)
                 -- if  abs(curr_evt.y) > pi/2 then curr_evt.y +=pi curr_evt.z+=pi end
             end
         end
     end
-    -- print_vec(curr_evt, "evt")
-    
-    for k, v in pairs(obstacles) do 
-        v.world_transform:setEulers( vec(-curr_evt.y - pi/2, -correction_ang, -curr_evt.z ) )
+
+    for k, v in pairs(rotating_objects) do 
+        v.transform:setEulers( vec(-curr_evt.y - pi/2, -correction_ang, -curr_evt.z ) )
         model_rotate_euler(v.model, curr_evt.y + pi/2, correction_ang, curr_evt.z)
     end
-    
+
     cam.target = ball.position
     cam:set_orbit(pi/2, cam_orb_rad)
 
@@ -253,7 +241,7 @@ function _draw()
     begin_3d_mode(cam)
     draw_grid(40, 1)
     ground:draw(BEIGE)
-    level2:draw(MAROON)
+    goal:draw(MAROON)
     ball:draw(ORANGE)
     end_3d_mode()
 
