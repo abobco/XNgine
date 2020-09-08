@@ -51,15 +51,14 @@ function Plane:new(pos, normal)
 end
 
 MeshSet = {
-    transform = Transform:new()
+    transform = Transform:new(),
+    model = 0
 }
 
 function MeshSet:new(pos, model, scale)
     local o = o or {}
     setmetatable(o, {__index = self}) 
     o.transform = Transform:new(pos, scale)
-    -- o.position = pos or MeshSet.position
-    -- o.scale = scale or MeshSet.scale
     o.model = model or load_cube_model(o.transform.scale)
     return o
 end
@@ -130,7 +129,6 @@ score = 0
 curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
--- cat = MeshSet:new(vec(0, 8, 3), vec(1, 1, 1), vec(0,1,0), load_model("../models/concave_cat.iqm"))
 ground = MeshSet:new(vec(0,8, 0),  load_model("../models/phys_level.iqm"))
 goal = MeshSet:new(vec(-14, 9.5, -9), load_model("../models/lowcube.iqm"))
 goal.transform:setEulers(vec(pi/2,0,0))
@@ -194,6 +192,7 @@ function _fixedUpdate()
         for mk, mv in pairs(v.bounds) do
             local results = sep_axis(mv, ball)
             if results then
+                rotating_objects = { v.obj}
                 collision_count+=1
                 inbounds = true
                 local plane_to_sphere = vec_scale(results.s.normal, results.d)
@@ -231,7 +230,7 @@ function _draw()
 
     for k, v in pairs(rotating_objects) do 
         v.transform:setEulers( vec(-curr_evt.y - pi/2, -correction_ang, -curr_evt.z ) )
-        model_rotate_euler(v.model, curr_evt.y + pi/2, correction_ang, curr_evt.z)
+        model_rotate_euler(v.model, curr_evt.y + pi/2,  correction_ang,  curr_evt.z)
     end
 
     cam.target = ball.position
