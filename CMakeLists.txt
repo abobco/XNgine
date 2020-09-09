@@ -69,12 +69,16 @@ FetchContent_Declare(
 
 project(XNlib)
 
-set( xnlib  src/util/bob_math.h src/util/bob_math.c src/util/collisions.c src/util/file_io.c ${raylib_BINARY_DIR}/src/raylib.h )
-list(APPEND xnlib src/servers/message_queue.c src/util/input.c src/servers/bt/gamepad_server.c) 
-list(APPEND xnlib src/graphics/particles.c src/graphics/renderer.c)
 set( lb src/lua-bindings )
-# ${lb}/lua_snake.c 
-list(APPEND xnlib ${lb}/lua_util.h ${lb}/lua_util.c ${lb}/lua_raylib.c ${lb}/lua_server.c ${lb}/lua_particles.c ${lb}/lua_physics.c )
+
+set( xnlib  
+  src/util/file_io.c 
+  src/util/bob_math.h src/util/bob_math.c src/util/collisions.c 
+  ${raylib_BINARY_DIR}/src/raylib.h 
+  src/servers/message_queue.c src/util/input.c src/servers/bt/gamepad_server.c
+  src/graphics/particles.c src/graphics/renderer.c
+  ${lb}/lua_util.h ${lb}/lua_util.c ${lb}/lua_raylib.c ${lb}/lua_server.c ${lb}/lua_particles.c ${lb}/lua_physics.c
+)
 
 link_directories(build/_deps/raylib-build/src)
 
@@ -82,13 +86,22 @@ add_library(xnlib-fn STATIC ${xnlib} )
 
 # ========================================================================================
 
-# =============================== Build the darn game ===================================
+# =============================== Build the darn game ====================================
+
+option(Profiling "build with gperftools, record profiling stats")
 
 macro(XN_Build project_name src_file)
   project( ${project_name} ) 
 
   # build a debug symbol table for gdb
   set(CMAKE_BUILD_TYPE Debug)
+
+  if(Profiling)
+    add_definitions( -DPROFILING)
+    set(prof profiler)
+  else()
+    set(prof "")
+  endif()
 
   # build game
   add_executable(${PROJECT_NAME}  ${src_file} )
@@ -100,8 +113,7 @@ macro(XN_Build project_name src_file)
   # cross compiler stuff
   set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
   set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "./")
-  target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn )
-  # target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn profiler)
+  target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn ${prof})
 endmacro()
 
 XN_Build( XNgine src/main.c )

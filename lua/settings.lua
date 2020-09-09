@@ -196,6 +196,14 @@ function vec_dot(a,b)
     return d
 end
 
+function vec_lerp(a, b, t)
+    local ret = {}
+    for k, v in pairs(a) do 
+        ret[k] = v*(1-t) + b[k]*t
+    end
+    return ret
+end
+
 function color(_r, _g, _b, _a )
     return { r=_r, g=_g, b=_b, a=_a }
 end

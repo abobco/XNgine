@@ -16,7 +16,9 @@ end
 MeshSet = {
     position = vec(0,0,0),
     model = 0,
-    tint = WHITE
+    tint = WHITE,
+    eulers = vec(pi/2,0,0),
+    bounciness = 0.01
 }
 
 function MeshSet:new(pos, model, tint)
@@ -25,6 +27,8 @@ function MeshSet:new(pos, model, tint)
     o.position = pos or MeshSet.position
     o.model = model or load_cube_model(vec(1,1,1))
     o.tint = tint or MeshSet.tint
+    o.eulers = MeshSet.eulers
+    o.bounciness = MeshSet.bounciness
     return o
 end
 
@@ -92,23 +96,23 @@ score = 0
 curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
-ground = MeshSet:new(vec(0,8, 0),  load_model("../models/phys_level.iqm"), BEIGE)
-goal = MeshSet:new(vec(-14, 9.5, -9), load_model("../models/tower.iqm"), MAROON)
-model_rotate_euler(goal.model, pi/2, 0, 0)
+ground = MeshSet:new(vec(0,8, 0),  load_model("../models/bigpaddle.iqm"), BEIGE)
+tower = MeshSet:new(vec(0, 8, -21), load_model("../models/tower.iqm"), BEIGE)
+model_rotate_euler(tower.model, pi/2, 0, 0)
 
 ball = Sphere:new(vec_add(ground.position, vec(0,6,0)), 0.5, ORANGE)
 ball.inbounds = true
 ball.vel = vec(0,0,0)
 
-obstacles = { ground, goal }
+obstacles = { ground, tower }
+visible_objects = { ground, tower, ball }
 rotating_objects = { ground }
-visible_objects = { ground, goal, ball }
 
 spawn_pos = vec( random()*2, ground.position.y+6, random()*2 )
 spawn_plane = -5
 
 cam_ang_speed = 0
-cam_orb_rad = 16
+cam_orb_rad = 32
 cam = Camera:new( vec(cam_orb_rad, ground.position.y+16, 0),     -- position
                   ground.position,                               -- target
                   vec(0,  1, 0) )                                -- camera up
@@ -131,6 +135,13 @@ function _fixedUpdate()
         score = 0
         ball.vel = vec(0, ball.vel.y, 0)
     end 
+
+    -- rotate objects towards target
+    for k, v in pairs(rotating_objects) do
+        v.eulers = vec_lerp(v.eulers, vec(curr_evt.y + pi/2,  correction_ang,  curr_evt.z), 0.1)
+        model_rotate_euler(v.model, v.eulers.x,  v.eulers.y,  v.eulers.z)
+        -- model_rotate_euler(v.model, curr_evt.y + pi/2,  correction_ang,  curr_evt.z)
+    end
 
     -- get sets of intersecting planes defining the collision meshes
     local bodies = {}
@@ -156,6 +167,7 @@ function _fixedUpdate()
                 local plane_to_sphere = vec_scale(results.s.normal, results.d)
                 if vec_dot(ball.vel, results.s.normal) < 0 then
                     ball.vel = vec_rej(ball.vel, results.s.normal)
+                    ball.vel = vec_add(vec_scale(results.s.normal, v.obj.bounciness), ball.vel)
                     ball.position = vec_sub(ball.position, plane_to_sphere)
                 end
                 ball.col_side = results.s
@@ -180,6 +192,8 @@ function _draw()
                 -- filthy attempt to correct flipping in gimbal lock situations
                 if abs(curr_evt.z+msg.z*2) < 0.1 and abs(curr_evt.y -msg.y*2) > pi/4 then 
                     correction_ang += pi 
+                    -- msg.z*=-1
+                    -- msg.y += pi
                 end
                 curr_evt = vec_scale( vec(msg.x, msg.y, msg.z), scale)
                 -- if  abs(curr_evt.y) > pi/2 then curr_evt.y +=pi curr_evt.z+=pi end
@@ -187,16 +201,18 @@ function _draw()
         end
     end
 
-    for k, v in pairs(rotating_objects) do
-        model_rotate_euler(v.model, curr_evt.y + pi/2,  correction_ang,  curr_evt.z)
-    end
+    -- for k, v in pairs(rotating_objects) do
+    --     v.eulers = vec_lerp(v.eulers, vec(curr_evt.y + pi/2,  correction_ang,  curr_evt.z), 0.1)
+    --     model_rotate_euler(v.model, v.eulers.x,  v.eulers.y,  v.eulers.z)
+    --     -- model_rotate_euler(v.model, curr_evt.y + pi/2,  correction_ang,  curr_evt.z)
+    -- end
 
     cam.target = ball.position
     cam:set_orbit(pi/2, cam_orb_rad)
 
     -- draw scene
     begin_3d_mode(cam)
-    draw_grid(40, 1)
+    draw_grid(64, 4)
 
     for k, v in pairs(visible_objects) do 
         v:draw()
