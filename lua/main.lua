@@ -1,42 +1,5 @@
 dofile("../lua/util/3dcam.lua")
 
-Transform = {
-    position = vec(0,0,0),
-    eulers   = vec(0,0,0),
-    quaternion = vec(0,0,0,1),
-    scale    = vec(1,1,1)
-}
-
-function Transform:new(pos, scale, euler_angles)
-    local o = {}
-    setmetatable(o, {__index = self}) 
-    o.position = pos or Transform.position
-    o.eulers = euler_angles or Transform.eulers
-    o.quaternion = vec(0,0,0,1)
-    o.scale = scale or Transform.scale
-    o:setEulers(o.eulers)
-    return o
-end
-
-function Transform:setEulers(euler_angles)
-    local new = false
-    for k, v in pairs(euler_angles) do
-        if v ~= self.eulers[k] then new = true break end
-    end
-    if new then 
-        self.eulers = euler_angles
-        self.quaternion = euler_to_quaternion(euler_angles)
-    end
-end
-
-function Transform:transformPoint(point)
-    local ret = {}
-    ret = vec( point.x*self.scale.x, point.y*self.scale.y, point.z*self.scale.z)
-    ret = vec_rotate_quaternion(ret, self.quaternion)
-    ret = vec_add(ret, self.position)
-    return ret
-end
-
 Plane = {
     point=vec(0,0,0),
     normal=vec(0,1,0)
@@ -51,48 +14,47 @@ function Plane:new(pos, normal)
 end
 
 MeshSet = {
-    transform = Transform:new(),
-    model = 0
+    position = vec(0,0,0),
+    model = 0,
+    tint = WHITE
 }
 
-function MeshSet:new(pos, model, scale)
+function MeshSet:new(pos, model, tint)
     local o = o or {}
     setmetatable(o, {__index = self}) 
-    o.transform = Transform:new(pos, scale)
-    o.model = model or load_cube_model(o.transform.scale)
-    -- translate_model(o.model, pos)
+    o.position = pos or MeshSet.position
+    o.model = model or load_cube_model(vec(1,1,1))
+    o.tint = tint or MeshSet.tint
     return o
-end
-
-function MeshSet:get_faces()
-    local faces = {}
-    return faces
 end
 
 function MeshSet:draw(color)
     draw_model(self.model,
-               self.transform.position,
+               self.position,
+            --    vec(0,0,0),
                vec(1, 0, 0),    
                0,
                vec(1, 1, 1), 
-               color )
+               self.tint )
 end
 
 Sphere = { 
     position = vec(0,0,0),
     radius = 1,
+    color = RED
 }
 
-function Sphere:new(pos, radius)
+function Sphere:new(pos, radius, color)
     local o = o or {}
     setmetatable(o, {__index = self}) 
     o.position = pos or Sphere.position
     o.radius = radius or Sphere.radius
+    o.color = color or Sphere.color
     return o
 end
 
-function Sphere:draw(color)
-    draw_sphere(self.position, self.radius, color)
+function Sphere:draw()
+    draw_sphere(self.position, self.radius, self.color)
 end
 
 function vec_rej(a,b)
@@ -130,24 +92,24 @@ score = 0
 curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
-ground = MeshSet:new(vec(0,8, 0),  load_model("../models/phys_level.iqm"))
-goal = MeshSet:new(vec(-14, 9.5, -9), load_model("../models/tower.iqm"))
-goal.transform:setEulers(vec(-pi/2,0,0))
+ground = MeshSet:new(vec(0,8, 0),  load_model("../models/phys_level.iqm"), BEIGE)
+goal = MeshSet:new(vec(-14, 9.5, -9), load_model("../models/tower.iqm"), MAROON)
 model_rotate_euler(goal.model, pi/2, 0, 0)
 
-obstacles = { ground, goal }
-rotating_objects = { ground }
-
-ball = Sphere:new(vec_add(ground.transform.position, vec(0,6,0)), 0.5)
+ball = Sphere:new(vec_add(ground.position, vec(0,6,0)), 0.5, ORANGE)
 ball.inbounds = true
 ball.vel = vec(0,0,0)
 
-spawn_pos = vec( random()*2, ground.transform.position.y+6, random()*2 )
+obstacles = { ground, goal }
+rotating_objects = { ground }
+visible_objects = { ground, goal, ball }
+
+spawn_pos = vec( random()*2, ground.position.y+6, random()*2 )
 spawn_plane = -5
 
 cam_ang_speed = 0
 cam_orb_rad = 16
-cam = Camera:new( vec(cam_orb_rad, ground.transform.position.y+16, 0),     -- position
+cam = Camera:new( vec(cam_orb_rad, ground.position.y+16, 0),     -- position
                   ground.position,                               -- target
                   vec(0,  1, 0) )                                -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
@@ -171,19 +133,19 @@ function _fixedUpdate()
     end 
 
     -- get sets of intersecting planes defining the collision meshes
-        local bodies = {}
-        for k, v in pairs(obstacles) do
-            bodies[k] = {obj=v, bounds=get_halfspace_bounds(v.model)}
-        end
+    local bodies = {}
+    for k, v in pairs(obstacles) do
+        bodies[k] = {obj=v, bounds=get_halfspace_bounds(v.model)}
+    end
 
     -- separating axis overlap tests
     local inbounds = false
     collision_count = 0
     for k, v in pairs(bodies) do
         for mk, mv in pairs(v.bounds) do
-            -- translate to world splace
+            -- translate to world space
             for mmk, mmv in pairs(mv) do
-                mmv.point = vec_add(v.obj.transform.position, mmv.point)
+                mmv.point = vec_add(v.obj.position, mmv.point)
             end
             
             local results = sep_axis(mv, ball)
@@ -225,7 +187,7 @@ function _draw()
         end
     end
 
-    for k, v in pairs(rotating_objects) do 
+    for k, v in pairs(rotating_objects) do
         model_rotate_euler(v.model, curr_evt.y + pi/2,  correction_ang,  curr_evt.z)
     end
 
@@ -235,9 +197,10 @@ function _draw()
     -- draw scene
     begin_3d_mode(cam)
     draw_grid(40, 1)
-    ground:draw(BEIGE)
-    goal:draw(MAROON)
-    ball:draw(ORANGE)
+
+    for k, v in pairs(visible_objects) do 
+        v:draw()
+    end
     end_3d_mode()
 
     draw_fps()

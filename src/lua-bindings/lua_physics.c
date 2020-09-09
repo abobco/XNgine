@@ -108,6 +108,18 @@ int lua_QuaternionFromEuler( lua_State *L ) {
     return 1;
 }
 
+int lua_setModelTransform( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    Vector3 trans = lua_getVector3(L, 2);
+    Vector3 rot = lua_getVector3(L, 3);
+    Matrix translation = MatrixTranslate( trans.x, trans.y, trans.z);
+    Matrix rotation = MatrixRotateXYZ( rot );
+
+    get_gamestate()->modelSet.models[id].transform = MatrixMultiply(rotation, translation);
+
+    return 0;
+}
+
 int lua_MatrixTranslate( lua_State *L ) {
     int id = luaL_checkinteger(L, 1);
     Vector3 t = lua_getVector3(L, 2);

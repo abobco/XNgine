@@ -195,6 +195,7 @@ int lua_rotateVectorEulers( lua_State *L );
 int lua_getConvexMeshBounds( lua_State *L );
 int lua_Slerp( lua_State *L );
 int lua_MatrixTranslate( lua_State *L );
+int lua_setModelTransform( lua_State *L );
 
 // define lua host libraries
 static const struct luaL_Reg lua_server_f[] = {
@@ -283,7 +284,8 @@ static const struct luaL_Reg lua_raylib[] = {
     { "euler_to_quaternion", lua_QuaternionFromEuler },
     { "get_halfspace_bounds", lua_getConvexMeshBounds },
     { "quaternion_slerp", lua_Slerp },
-    { "translate_model", lua_MatrixTranslate },
+    { "model_translate", lua_MatrixTranslate },
+    { "model_transform", lua_setModelTransform },
     {0,0}   // terminator 
 };
 
