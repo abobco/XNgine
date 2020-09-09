@@ -31,6 +31,16 @@ void lua_pushVector4( lua_State *L,  Vector4 v) {
     lua_setFloatField(L, "w", v.w);
 }
 
+int lua_Slerp( lua_State *L ) {
+    Quaternion q1 = lua_getVector4(L, 1);
+    Quaternion q2 = lua_getVector4(L, 2);
+    float t = luaL_checknumber(L, 3);
+
+    lua_pushVector4(L, QuaternionSlerp(q1, q2, t));
+
+    return 1;
+} 
+
 Transform lua_getTransform( lua_State *L, int table_stack_idx ) {
     Vector3 t = lua_getVector3Field( L, "position", table_stack_idx);
     Quaternion q = lua_getVector4Field( L, "rotation", table_stack_idx);
@@ -42,6 +52,7 @@ Transform lua_getTransform( lua_State *L, int table_stack_idx ) {
 int lua_getConvexMeshBounds( lua_State *L ) {
     int id = luaL_checkinteger(L, 1);
     MeshSet *p = &get_gamestate()->modelSet.convexMeshBounds[id];
+    Model* model =  &get_gamestate()->modelSet.models[id];
     if ( p == NULL ) {
         printf("[PHYSICS] halfspace bounds not found! Not a convex mesh\n");
         return 0;
@@ -54,13 +65,16 @@ int lua_getConvexMeshBounds( lua_State *L ) {
         for ( int j = 0; j < p->meshes[i].count; j++ ) {
             lua_pushinteger(L, j+1);
             lua_newtable(L);
+            Plane* plane = &p->meshes[i].planes[j];
+            Vector3 point = Vector3Transform(plane->point, model->transform);
+            Vector3 normal = Vector3Transform(plane->normal, model->transform);
 
             lua_pushstring(L, "point");
-            lua_pushVector3(L, p->meshes[i].planes[j].point);
+            lua_pushVector3(L, point);
             lua_settable(L, -3);
 
             lua_pushstring(L, "normal");
-            lua_pushVector3(L, p->meshes[i].planes[j].normal);
+            lua_pushVector3(L, normal);
             lua_settable(L, -3);
 
             lua_settable(L, -3);
@@ -92,4 +106,11 @@ int lua_QuaternionFromEuler( lua_State *L ) {
     Vector3 eul = lua_getVector3(L, 1);
     lua_pushVector4(L, QuaternionFromEuler(eul.x, eul.y, eul.z));
     return 1;
+}
+
+int lua_MatrixTranslate( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    Vector3 t = lua_getVector3(L, 2);
+    get_gamestate()->modelSet.models[id].transform = MatrixTranslate( t.x, t.y, t.z);
+    return 0;
 }

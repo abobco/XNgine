@@ -60,6 +60,7 @@ function MeshSet:new(pos, model, scale)
     setmetatable(o, {__index = self}) 
     o.transform = Transform:new(pos, scale)
     o.model = model or load_cube_model(o.transform.scale)
+    -- translate_model(o.model, pos)
     return o
 end
 
@@ -130,8 +131,8 @@ curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
 ground = MeshSet:new(vec(0,8, 0),  load_model("../models/phys_level.iqm"))
-goal = MeshSet:new(vec(-14, 9.5, -9), load_model("../models/lowcube.iqm"))
-goal.transform:setEulers(vec(pi/2,0,0))
+goal = MeshSet:new(vec(-14, 9.5, -9), load_model("../models/tower.iqm"))
+goal.transform:setEulers(vec(-pi/2,0,0))
 model_rotate_euler(goal.model, pi/2, 0, 0)
 
 obstacles = { ground, goal }
@@ -170,41 +171,37 @@ function _fixedUpdate()
     end 
 
     -- get sets of intersecting planes defining the collision meshes
-    local bodies = {}
-    for k, v in pairs(obstacles) do
-        bodies[k] = {obj=v, bounds=get_halfspace_bounds(v.model)}
-    end
-    
-    -- transform to world space
-    for k, v in pairs(bodies) do
-        for mk, mv in pairs(v.bounds) do
-            for mmk, mmv in pairs(mv) do
-                mmv.point = v.obj.transform:transformPoint(mmv.point)
-                mmv.normal = vec_rotate_quaternion(mmv.normal, v.obj.transform.quaternion)
-            end
+        local bodies = {}
+        for k, v in pairs(obstacles) do
+            bodies[k] = {obj=v, bounds=get_halfspace_bounds(v.model)}
         end
-    end
 
     -- separating axis overlap tests
     local inbounds = false
     collision_count = 0
     for k, v in pairs(bodies) do
         for mk, mv in pairs(v.bounds) do
+            -- translate to world splace
+            for mmk, mmv in pairs(mv) do
+                mmv.point = vec_add(v.obj.transform.position, mmv.point)
+            end
+            
             local results = sep_axis(mv, ball)
             if results then
-                rotating_objects = { v.obj}
+                rotating_objects = { v.obj }
                 collision_count+=1
                 inbounds = true
                 local plane_to_sphere = vec_scale(results.s.normal, results.d)
-                ball.position = vec_sub(ball.position, plane_to_sphere)
                 if vec_dot(ball.vel, results.s.normal) < 0 then
                     ball.vel = vec_rej(ball.vel, results.s.normal)
+                    ball.position = vec_sub(ball.position, plane_to_sphere)
                 end
                 ball.col_side = results.s
             end
         end
     end
     ball.inbounds = inbounds
+    
     score += 1
 end
 
@@ -229,7 +226,6 @@ function _draw()
     end
 
     for k, v in pairs(rotating_objects) do 
-        v.transform:setEulers( vec(-curr_evt.y - pi/2, -correction_ang, -curr_evt.z ) )
         model_rotate_euler(v.model, curr_evt.y + pi/2,  correction_ang,  curr_evt.z)
     end
 

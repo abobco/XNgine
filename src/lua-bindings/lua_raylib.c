@@ -578,8 +578,8 @@ int lua_loadModel( lua_State *L ) {
         if (is_convex) strcpy(mesh_type, "convex");
         else           strcpy(mesh_type, "\033[1;31mconcave\033[0m");
 
-        printf("\tMesh %d: %s, %d triangles, %d verts", ii, mesh_type, mesh->triangleCount, mesh->vertexCount);
-        if (is_convex) printf(", bounded by %d planes", m->convexMeshBounds[m->count].meshes[ii].count);
+        printf("\tMesh %d: %d triangles, %d verts, %s", ii, mesh->triangleCount, mesh->vertexCount, mesh_type);
+        if (is_convex) printf(" bounded by %d planes", m->convexMeshBounds[m->count].meshes[ii].count);
         printf("\n");
     }
     m->convexMeshBounds[m->count].count = convex_polys;

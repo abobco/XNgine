@@ -44,6 +44,7 @@ typedef struct MeshSet {
 typedef struct ModelSet {
     Model models[LUA_SET_SIZE];
     MeshSet convexMeshBounds[LUA_SET_SIZE];
+    // Transform model_transforms[LUA_SET_SIZE];
     int count;
 } ModelSet;
 
@@ -192,6 +193,8 @@ int lua_rotateVectorByQuaternion( lua_State *L );
 int lua_QuaternionFromEuler( lua_State *L );
 int lua_rotateVectorEulers( lua_State *L );
 int lua_getConvexMeshBounds( lua_State *L );
+int lua_Slerp( lua_State *L );
+int lua_MatrixTranslate( lua_State *L );
 
 // define lua host libraries
 static const struct luaL_Reg lua_server_f[] = {
@@ -279,6 +282,8 @@ static const struct luaL_Reg lua_raylib[] = {
     { "vec_rotate_quaternion", lua_rotateVectorByQuaternion },
     { "euler_to_quaternion", lua_QuaternionFromEuler },
     { "get_halfspace_bounds", lua_getConvexMeshBounds },
+    { "quaternion_slerp", lua_Slerp },
+    { "translate_model", lua_MatrixTranslate },
     {0,0}   // terminator 
 };
 
