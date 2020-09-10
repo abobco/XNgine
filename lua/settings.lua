@@ -180,9 +180,9 @@ function vec_neg(a)
     return ret
 end
 
-function vec_scale(vec, s)
+function vec_scale(a, s)
     local ret = {}
-    for k, v in pairs(vec) do
+    for k, v in pairs(a) do
         ret[k] = v*s
     end
     return ret
@@ -200,6 +200,14 @@ function vec_lerp(a, b, t)
     local ret = {}
     for k, v in pairs(a) do 
         ret[k] = v*(1-t) + b[k]*t
+    end
+    return ret
+end
+
+function vec_copy(a)
+    local ret = {}
+    for k, v in pairs(a) do
+        ret[k] = v
     end
     return ret
 end
