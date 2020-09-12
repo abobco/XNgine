@@ -50,11 +50,11 @@ cam = Camera:new( vec_add(catapult_ball.position, vec(0, 32, 32)),     -- positi
                   vec(0, 1, 0) )                              -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
 
+-- call these from lua console at run time
 function shoot()
     catapult_arm.time_shot = 0
     catapult_arm.target_eulers = vec(pi/2, 0, pi/2)
 end
-
 function respawn()
     catapult_ball.position = vec_copy(spawn_pos)
     catapult_ball.vel = vec(0, catapult_ball.vel.y, 0)
