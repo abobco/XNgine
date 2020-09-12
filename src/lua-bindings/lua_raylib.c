@@ -551,6 +551,70 @@ int lua_loadModel( lua_State *L ) {
                 p_iter->next = new_node;
             }
 
+            if ( plane_count == 6) {
+                // check if model is an OBB
+                int parallel_axes = 0;
+                p_iter = bounds_list;
+                struct PlaneNode *unique_planes = NULL;
+                while ( p_iter != NULL ) {
+                    struct PlaneNode *compare_node = p_iter->next;
+                    while ( compare_node != NULL ) {
+                        if ( fabsf( fabsf( Vector3DotProduct( p_iter->plane.normal, compare_node->plane.normal ) ) - 1.0f )  < EPSILON ) {
+                            parallel_axes++;
+                            // insert new plane
+                            struct PlaneNode *new_node = (struct PlaneNode*) malloc(sizeof(struct PlaneNode));
+                            struct PlaneNode *last = unique_planes;
+                            new_node->plane =  p_iter->plane;
+                            new_node->next = NULL;
+                            if ( unique_planes == NULL ) {
+                                unique_planes = new_node;
+                                break;
+                            }
+                            while ( last->next != NULL ) {  
+                                last = last->next;
+                            }   
+                            last->next = new_node;
+                            break;
+                        }
+                        compare_node = compare_node->next;
+                    }
+                    p_iter = p_iter->next;
+                }
+                if ( parallel_axes == 3 ) {
+                    p_iter = unique_planes;
+                    bool is_OBB = true;
+                    while ( p_iter != NULL ) {
+                        // print_vec(p_iter->plane.normal);
+                        if ( !(fabsf( fabsf( Vector3DotProduct( p_iter->plane.normal, (Vector3) {1, 0, 0})) - 1.0f) < EPSILON)
+                          && !(fabsf( fabsf( Vector3DotProduct( p_iter->plane.normal, (Vector3) {0, 1, 0})) - 1.0f) < EPSILON)
+                          && !(fabsf( fabsf( Vector3DotProduct( p_iter->plane.normal, (Vector3) {0, 0, 1})) - 1.0f) < EPSILON)) {
+                              is_OBB = false;
+                        }
+                        p_iter = p_iter->next;
+                    }
+                    if ( is_OBB ) {
+                        printf("OBB extents: (");
+                        p_iter = unique_planes;
+                        while ( p_iter != NULL ) {
+                            p_iter->plane.normal.x = fabsf(p_iter->plane.normal.x);
+                            p_iter->plane.normal.y = fabsf(p_iter->plane.normal.y);
+                            p_iter->plane.normal.z = fabsf(p_iter->plane.normal.z);
+                            
+                            float extent = fabsf( Vector3DotProduct(p_iter->plane.point, p_iter->plane.normal) );
+                            printf(" %f%s", extent, p_iter->next == NULL ? ")\n" : ", ");
+                            // print_vec(p_iter->plane.normal);
+
+                            p_iter = p_iter->next;
+                        }
+                    }
+                }
+                while ( unique_planes != NULL) {
+                    p_iter=unique_planes;
+                    unique_planes = unique_planes->next;
+                    free(p_iter);
+                }
+            }
+
             // copy to global array of physics data
             PlaneSet *bounds = &m->convexMeshBounds[m->count].meshes[ii];
             bounds->planes = malloc( sizeof(Plane) * plane_count );
@@ -572,8 +636,8 @@ int lua_loadModel( lua_State *L ) {
             //     print_vec(bounds->planes[i].point);
             //     print_vec(bounds->planes[i].normal);
             // }
+
         }
-        
         char mesh_type[32] = "";
         if (is_convex) strcpy(mesh_type, "convex");
         else           strcpy(mesh_type, "\033[1;31mconcave\033[0m");

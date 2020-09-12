@@ -7,11 +7,11 @@ curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
 obstacles = {
-    MeshSet:new(vec(0,8, 0),  load_model("../models/bigpaddle.iqm"), BEIGE),
-    MeshSet:new(vec(0,10,-30),  load_model("../models/bigpaddle.iqm"), BEIGE),
-    MeshSet:new(vec(-30,16,-30),  load_model("../models/bigpaddle.iqm"), BEIGE),
+    MeshSet:new(vec(  0,  8,  0), load_model("../models/bigpaddle.iqm"), BEIGE),
+    MeshSet:new(vec(  0, 10,-30), load_model("../models/bigpaddle.iqm"), BEIGE),
+    MeshSet:new(vec(-30, 16,-30), load_model("../models/bigpaddle.iqm"), BEIGE),
     
-    MeshSet:new(vec( -30, 8, -10), load_model("../models/tower.iqm"), BEIGE)
+    MeshSet:new(vec(-30,  8,-10), load_model("../models/tower.iqm"), BEIGE)
 }
 
 ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, ORANGE)
@@ -42,7 +42,8 @@ spawn_plane = -18
 
 function respawn()
     ball.position = vec_copy(spawn_pos)
-    ball.vel = vec(0, ball.vel.y, 0)
+    ball.vel = vec(0, ball.vel.y, 0)  
+    cam.position = vec_add(ball.position, vec(0,16, cam_orb_rad))
 end
 
 cam_ang_speed = 0
@@ -52,10 +53,8 @@ cam = Camera:new( vec_add(ball.position, vec(cam_orb_rad, 16, 0)),     -- positi
                   vec(0, 1, 0) )                                       -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
 
-function cam:set_orbit(angle, radius)
-    cam.position.x = cam.target.x + cos(angle)*radius
-    cam.position.z = cam.target.z + sin(angle)*radius
-    cam.position.y = cam.target.y + 16
+function cam:set_orbit( radius)
+    cam.position = vec_lerp( cam.position, vec_add( ball.position, vec(0,16, radius)), 0.05)
 end
 
 -- _fixedUpdate() is called at 60 hz
@@ -101,25 +100,26 @@ function _fixedUpdate()
             if results then
                 active_object = v.obj
                 local plane_to_sphere = vec_scale(results.s.normal, results.d)
-                    ball.position = vec_sub(ball.position, plane_to_sphere)
-                    if v.obj.prev_eulers and v.obj.bounciness == 0 then   
-                        local collision_center = vec_sub(ball.position, plane_to_sphere )
-                        local radius = vec_len(vec_sub(collision_center, v.obj.position))
-                        local angular_vel = vec_sub(v.obj.eulers, v.obj.prev_eulers)
-                        local linear_vel = vec_scale( results.s.normal, vec_len(vec_scale(angular_vel, radius*0.3)))
-                        ball.vel = vec_add(ball.vel, linear_vel)
+                ball.position = vec_sub(ball.position, plane_to_sphere)
+                if v.obj.prev_eulers and v.obj.bounciness == 0 then   
+                    local collision_center = vec_sub(ball.position, plane_to_sphere )
+                    local radius = vec_len(vec_sub(collision_center, v.obj.position))
+                    local angular_vel = vec_sub(v.obj.eulers, v.obj.prev_eulers)
+                    local linear_vel = vec_scale( results.s.normal, vec_len(vec_scale(angular_vel, radius*0.3)))
+                    ball.vel = vec_add(ball.vel, linear_vel)
+                end
+                
+                if vec_dot(ball.vel, results.s.normal) < 0 then
+                    ball.vel = vec_rej(ball.vel, results.s.normal)
+                    if v.obj.bounciness > 0 then
+                        ball.vel = vec_add(vec_scale(results.s.normal, v.obj.bounciness), ball.vel)
                     end
-                    
-                    if vec_dot(ball.vel, results.s.normal) < 0 then
-                        ball.vel = vec_rej(ball.vel, results.s.normal)
-                        if v.obj.bounciness > 0 then
-                            ball.vel = vec_add(vec_scale(results.s.normal, v.obj.bounciness), ball.vel)
-                        end
-                    end
-                ball.col_side = results.s
+                end
             end
         end
     end
+    
+    cam:set_orbit(cam_orb_rad)
     score += 1
 end
 
@@ -146,7 +146,6 @@ function _draw()
     end
 
     cam.target = ball.position
-    cam:set_orbit(pi/2, cam_orb_rad)
 
     -- draw scene
     begin_3d_mode(cam)

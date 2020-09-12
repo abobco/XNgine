@@ -164,12 +164,23 @@ function vec_sub(a, b)
 end 
 
 function vec_len(a)
+    if a.w ~= nil then
+        return sqrt( a.x*a.x + a.y*a.y + a.z*a.z + a.w*a.w)
+    end
     return sqrt( a.x*a.x + a.y*a.y + a.z*a.z)
+end
+
+function vec_len_sqr(a)
+    return a.x*a.x + a.y*a.y + a.z*a.z
 end
 
 function vec_norm(a)
     local len = vec_len(a)
-    return vec( a.x/len, a.y/len, a.z/len )
+    local ret = {}
+    for k, v in pairs(a) do 
+        ret[k] = v/len
+    end
+    return ret
 end
 
 function vec_neg(a)
@@ -194,6 +205,12 @@ function vec_dot(a,b)
         d += a[k]*b[k]
     end
     return d
+end
+
+function vec_cross(a, b)
+    return vec( a.x*b.z - a.z*b.y, 
+                a.z*b.x - a.x*b.z,
+                a.x*b.y - a.y*b.x )
 end
 
 function vec_lerp(a, b, t)
