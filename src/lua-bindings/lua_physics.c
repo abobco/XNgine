@@ -1,5 +1,7 @@
 #include "lua_util.h"
 #include "../util/bob_math.h"
+#include "../graphics/renderer.h"
+#include <float.h>
 
 Vector4 lua_getVector4( lua_State *L, int table_stack_idx) {
     Vector4 q;
@@ -47,6 +49,83 @@ Transform lua_getTransform( lua_State *L, int table_stack_idx ) {
     Vector3 s = lua_getVector3Field( L, "scale", table_stack_idx);
 
     return (Transform) {t, q, s};
+}
+
+static void extreme_points_in_direction(Vector3 dir, float *verts, int n, int *imin, int *imax) {
+    float min_proj = FLT_MAX;
+    float max_proj = -FLT_MAX;
+    for ( int i = 0; i < n; i++ ) {
+        Vector3 vert = get_vert(verts, i*3);
+        float proj = Vector3DotProduct(vert, dir);
+        
+        if ( proj < min_proj ) {
+            min_proj = proj;
+            *imin = i;
+        }
+        if ( proj > max_proj ) {
+            max_proj = proj;
+            *imax = i;
+        }
+    }
+}
+
+typedef struct AABB {
+    Vector3 min;
+    Vector3 max;
+} AABB;
+
+static AABB get_model_AABB( Model *model ) {
+    AABB box = {
+        (Vector3) {FLT_MAX, FLT_MAX, FLT_MAX},
+        (Vector3) {-FLT_MAX, -FLT_MAX, -FLT_MAX},
+    };
+
+    Vector3 axes[3] = {
+            (Vector3) {1, 0, 0},
+            (Vector3) {0, 1, 0},
+            (Vector3) {0, 0, 1}
+    };
+
+    for ( int i = 0; i < model->meshCount; i++ ) {
+        for ( int j = 0; j < 3; j++ ) {
+            int imin, imax;
+            extreme_points_in_direction(
+                axes[j], 
+                model->meshes[i].vertices, 
+                model->meshes[i].vertexCount,
+                &imin, &imax
+            );
+            Vector3 min_vert = get_vert(model->meshes[i].vertices, imin*3);
+            Vector3 max_vert = get_vert(model->meshes[i].vertices, imax*3);
+            if ( min_vert.x < box.min.x ) box.min.x = min_vert.x;
+            if ( min_vert.y < box.min.y ) box.min.y = min_vert.y;
+            if ( min_vert.z < box.min.z ) box.min.z = min_vert.z;
+            if ( max_vert.x > box.max.x ) box.max.x = max_vert.x;
+            if ( max_vert.y > box.max.y ) box.max.y = max_vert.y;
+            if ( max_vert.z > box.max.z ) box.max.z = max_vert.z;
+        }
+    }
+    return box;
+}
+
+int lua_getBoundingSphere( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    Model* model =  &get_gamestate()->modelSet.models[id];
+
+    AABB box =  get_model_AABB(model);
+    
+    float radius = 0;
+    if ( radius < fabsf(box.min.x) ) radius = fabsf(box.min.x);
+    if ( radius < fabsf(box.min.y) ) radius = fabsf(box.min.y);
+    if ( radius < fabsf(box.min.z) ) radius = fabsf(box.min.z);
+    if ( radius < fabsf(box.max.x) ) radius = fabsf(box.max.x);
+    if ( radius < fabsf(box.max.y) ) radius = fabsf(box.max.y);
+    if ( radius < fabsf(box.max.z) ) radius = fabsf(box.max.z);
+
+    // printf("%f\n", radius);
+
+    lua_pushnumber(L, radius);
+    return 1;
 }
 
 int lua_getConvexMeshBounds( lua_State *L ) {

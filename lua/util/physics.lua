@@ -147,8 +147,18 @@ end
 
 function point_in_aabb(point, box)
     return (point.x >= box.minX and point.x <= box.maxX) and
-         (point.y >= box.minY and point.y <= box.maxY) and
-         (point.z >= box.minZ and point.z <= box.maxZ);
+           (point.y >= box.minY and point.y <= box.maxY) and
+           (point.z >= box.minZ and point.z <= box.maxZ);
+end
+
+
+function dist_sqr_point_aabb(point, aabb)
+    local sqr_dist = 0
+    for k, v in pairs(point) do
+        if v < aabb.min[k] then sqr_dist = (aabb.min[k] - v)*(aabb.min[k] - v) end
+        if v > aabb.max[k] then sqr_dist = (aabb.max[k] - v)*(aabb.max[k] - v) end
+    end
+    return sqr_dist
 end
 
 Hash = {
@@ -187,19 +197,22 @@ function Hash:get_meshes(point)
 end
 
 function Hash:add_meshset(meshset)
-    local bounds=get_halfspace_bounds(meshset.model)
-    for k, v in pairs(bounds) do
-        for mk, mv in pairs(v) do 
-            local grid_pos = self:world_to_grid(vec_add(mv.point, meshset.position))
-            local cell = self:get_cell(grid_pos)
-            local found = false
-            for mmk, mmv in pairs(cell) do 
-                if mmv.model == meshset.model then 
-                    found = true
+    local radius = get_bounding_sphere(meshset.model)
+    local grid_pos = self:world_to_grid(meshset.position)
+    local max_span = ceil(radius / self.cell_size)
+    for i = -max_span, max_span do 
+        for j = -max_span, max_span do
+            for k = -max_span, max_span do
+                local aabb = {
+                    min = vec_scale(vec_add(grid_pos, vec(i,j,k)), self.cell_size),
+                    max = vec_scale(vec_add(grid_pos, vec(i+1,j+1,k+1)), self.cell_size)
+                }
+                if dist_sqr_point_aabb(meshset.position, aabb) < radius*radius then
+                    local cell_pos = vec_add(grid_pos, vec(i,j,k))
+                    local cell = self:get_cell(cell_pos)
+                    cell[#cell+1] = meshset
+                    print_vec(cell_pos, "model "..meshset.model.." cell pos:")
                 end
-            end
-            if not found then
-                cell[#cell+1] = meshset
             end
         end
     end
@@ -226,30 +239,41 @@ function Hash:print_contents()
     end
 end
 
-function draw_hash(cells, cell_size, balls)
-    for i=-cells, cells do
-        for j = 0, cells/2 do
-            for k = -cells, cells do
-                local box =  {
-                    minX = i*cell_size - cell_size/2,
-                    minY = j*cell_size,
-                    minZ = k*cell_size - cell_size/2,
-                    maxX = i*cell_size + cell_size/2,
-                    maxY = j*cell_size + cell_size,
-                    maxZ = k*cell_size + cell_size/2,
-                }
-                local color = RED
-                for k, v in pairs(balls) do
-                    if point_in_aabb(v.position, box) then 
-                        color = GREEN 
-                        break 
+function ball_collisions(ball, hash) 
+    local bodies = {}
+    -- for k, v in pairs(obstacles) do
+    for k, v in pairs(hash:get_meshes(ball.position)) do
+        bodies[k] = { obj=v, bounds=get_halfspace_bounds(v.model) }
+    end
+
+    -- separating axis overlap tests
+    for k, v in pairs(bodies) do
+        for mk, mv in pairs(v.bounds) do
+            -- translate planes to world space
+            for mmk, mmv in pairs(mv) do
+                mmv.point = vec_add(v.obj.position, mmv.point)
+            end
+            
+            local results = sep_axis(mv, ball)
+            if results then
+                active_object = v.obj
+                local plane_to_sphere = vec_scale(results.s.normal, results.d)
+                ball.position = vec_sub(ball.position, plane_to_sphere)
+                if v.obj.prev_eulers and v.obj.bounciness == 0 then
+                    -- apply angular velocity
+                    local collision_center = vec_sub(ball.position, plane_to_sphere )
+                    local radius = vec_len(vec_sub(collision_center, v.obj.position))
+                    local angular_vel = vec_sub(v.obj.eulers, v.obj.prev_eulers)
+                    local linear_vel = vec_scale( results.s.normal, vec_len(vec_scale(angular_vel, radius*0.3)))
+                    ball.vel = vec_add(ball.vel, linear_vel)
+                end
+                
+                if vec_dot(ball.vel, results.s.normal) < 0 then
+                    ball.vel = vec_rej(ball.vel, results.s.normal)
+                    if v.obj.bounciness > 0 then
+                        ball.vel = vec_add(vec_scale(results.s.normal, v.obj.bounciness), ball.vel)
                     end
                 end
-                draw_cube_wires( 
-                    vec(i*cell_size, j*cell_size + cell_size/2, k*cell_size), 
-                    vec(cell_size-0.15, cell_size-0.15, cell_size-0.2), 
-                    color 
-                )
             end
         end
     end

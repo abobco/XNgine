@@ -193,6 +193,7 @@ int lua_DrawCubeTexture( lua_State *L ); // Draw cube textured
 int lua_DrawCubeWiresV( lua_State *L ); // Draw cube wires (Vector version) 
 int lua_DrawCubeV( lua_State *L ); // Draw cube (Vector version) 
 int lua_loadCubeModel( lua_State *L);
+int lua_getBoundingSphere( lua_State *L );
 
 // physics
 int lua_rotateVectorByQuaternion( lua_State *L );
@@ -292,6 +293,7 @@ static const struct luaL_Reg lua_raylib[] = {
     { "quaternion_slerp", lua_Slerp },
     { "model_translate", lua_MatrixTranslate },
     { "model_transform", lua_setModelTransform },
+    { "get_bounding_sphere", lua_getBoundingSphere},
     {0,0}   // terminator 
 };
 

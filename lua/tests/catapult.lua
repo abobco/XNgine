@@ -10,6 +10,7 @@ bounce_platforms = {
     MeshSet:new(vec(30, 8, -60), load_model("../models/bigpaddle.iqm"), MAROON),
     MeshSet:new(vec(75, 25, -60), load_model("../models/bigpaddle.iqm"), MAROON),
 }
+
 bucket = MeshSet:new(vec(64, 0, -32*4 + 4), load_model("../models/square_bucket.iqm"), BEIGE)
 
 catapult_arm = MeshSet:new(vec(0, 8, 3),  load_model("../models/catapult_arm.iqm"), BROWN)
@@ -46,6 +47,7 @@ for k, v in pairs(bounce_platforms) do
     visible_objects[#visible_objects+1] = v
 end
 
+-- spacial hash grid
 hash = Hash:new(40)
 for k, v in pairs(obstacles) do
     hash:add_meshset(v)
@@ -75,45 +77,6 @@ function respawn()
     catapult_ball.vel = vec(0, catapult_ball.vel.y, 0)
 end
 
-function ball_collisions(ball) 
-    local bodies = {}
-    -- for k, v in pairs(obstacles) do
-    for k, v in pairs(hash:get_meshes(ball.position)) do
-        bodies[k] = { obj=v, bounds=get_halfspace_bounds(v.model) }
-    end
-
-    -- separating axis overlap tests
-    for k, v in pairs(bodies) do
-        for mk, mv in pairs(v.bounds) do
-            -- translate planes to world space
-            for mmk, mmv in pairs(mv) do
-                mmv.point = vec_add(v.obj.position, mmv.point)
-            end
-            
-            local results = sep_axis(mv, ball)
-            if results then
-                local plane_to_sphere = vec_scale(results.s.normal, results.d)
-                ball.position = vec_sub(ball.position, plane_to_sphere)
-                if v.obj.prev_eulers and v.obj.bounciness == 0 then
-                    -- apply angular velocity
-                    local collision_center = vec_sub(ball.position, plane_to_sphere )
-                    local radius = vec_len(vec_sub(collision_center, v.obj.position))
-                    local angular_vel = vec_sub(v.obj.eulers, v.obj.prev_eulers)
-                    local linear_vel = vec_scale( results.s.normal, vec_len(vec_scale(angular_vel, radius*0.3)))
-                    ball.vel = vec_add(ball.vel, linear_vel)
-                end
-                
-                if vec_dot(ball.vel, results.s.normal) < 0 then
-                    ball.vel = vec_rej(ball.vel, results.s.normal)
-                    if v.obj.bounciness > 0 then
-                        ball.vel = vec_add(vec_scale(results.s.normal, v.obj.bounciness), ball.vel)
-                    end
-                end
-            end
-        end
-    end
-end
-
 -- _fixedUpdate() is called at 60 hz
 function _fixedUpdate()
     time += 1
@@ -140,7 +103,7 @@ function _fixedUpdate()
     catapult_arm.eulers = vec_lerp(catapult_arm.eulers, catapult_arm.target_eulers, 0.03)
     model_rotate_euler(catapult_arm.model, catapult_arm.eulers.x, catapult_arm.eulers.y, catapult_arm.eulers.z)
 
-    ball_collisions(catapult_ball)
+    ball_collisions(catapult_ball, hash)
    
     cam:set_orbit(80, pi/2-time*0.0016)
 end
@@ -152,7 +115,6 @@ function _draw()
     begin_3d_mode(cam)
 
     draw_grid(64, 4)
-    -- draw_hash(3, 40, balls)
     hash:draw_active_cells(balls)
     for k, v in pairs(visible_objects) do
         v:draw()

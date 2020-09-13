@@ -23,20 +23,25 @@ active_object = obstacles[1]
 
 for k, v in pairs(obstacles) do
     visible_objects[#visible_objects+1] = v
-    model_rotate_euler(v.model, pi/2, 0, 0)
 end
 
--- bouncey_bois = {}
--- for i = 0, 3 do
---     bouncey_bois[#bouncey_bois+1] = MeshSet:new( vec( -i*16, 8, -60),  load_model("../models/bigpaddle.iqm"), RED )
--- end 
+bouncey_bois = {}
+for i = 0, 3 do
+    bouncey_bois[#bouncey_bois+1] = MeshSet:new( vec( -i*16, 8, -60),  load_model("../models/bigpaddle.iqm"), RED )
+end 
 
--- for k, v in pairs(bouncey_bois) do
---     obstacles[#obstacles+1] = v
---     visible_objects[#visible_objects+1] = v
---     model_rotate_euler(v.model, pi/2, 0, 0)
---     v.bounciness = 0.5
--- end
+for k, v in pairs(bouncey_bois) do
+    obstacles[#obstacles+1] = v
+    v.bounciness = 0.5
+end
+
+-- spacial hash grid
+hash = Hash:new(40)
+for k, v in pairs(obstacles) do
+    visible_objects[#visible_objects+1] = v
+    hash:add_meshset(v)
+end
+hash:print_contents()
 
 spawn_pos = vec_add(obstacles[1].position, vec(0, 6, 0))
 spawn_plane = -18
@@ -48,7 +53,7 @@ function respawn()
 end
 
 cam_ang_speed = 0
-cam_orb_rad = 64
+cam_orb_rad = 32
 cam = Camera:new( vec_add(ball.position, vec(cam_orb_rad, cam_orb_rad/2, 0)),     -- position
                   ball.position,                                       -- target
                   vec(0, 1, 0) )                                       -- camera up
@@ -64,9 +69,6 @@ end
 function _fixedUpdate()
     -- physics update
     ball.vel.y += gravity.y
-    -- if vec_len(ball.vel) > ball.max_spd then
-    --     ball.vel = vec_scale(vec_norm(ball.vel), ball.max_spd)
-    -- end
     ball.position = vec_add(ball.position, ball.vel)
 
     -- respawn check
@@ -88,43 +90,7 @@ function _fixedUpdate()
         model_rotate_euler(v.model, v.eulers.x,  v.eulers.y,  v.eulers.z)
     end
 
-    -- get sets of intersecting planes defining the collision meshes
-    local bodies = {}
-    for k, v in pairs(obstacles) do
-        bodies[k] = { obj=v, bounds=get_halfspace_bounds(v.model) }
-    end
-
-    -- separating axis overlap tests
-    for k, v in pairs(bodies) do
-        for mk, mv in pairs(v.bounds) do
-            -- translate to world space
-            for mmk, mmv in pairs(mv) do
-                mmv.point = vec_add(v.obj.position, mmv.point)
-            end
-            
-            local results = sep_axis(mv, ball)
-            if results then
-                active_object = v.obj
-                local plane_to_sphere = vec_scale(results.s.normal, results.d)
-                ball.position = vec_sub(ball.position, plane_to_sphere)
-                if v.obj.prev_eulers and v.obj.bounciness == 0 then   
-                    local collision_center = vec_sub(ball.position, plane_to_sphere )
-                    local radius = vec_len(vec_sub(collision_center, v.obj.position))
-                    local angular_vel = vec_sub(v.obj.eulers, v.obj.prev_eulers)
-                    local linear_vel = vec_scale( results.s.normal, vec_len(vec_scale(angular_vel, radius*0.2)))
-                    ball.vel = vec_add(ball.vel, linear_vel)
-                end
-                
-                if vec_dot(ball.vel, results.s.normal) < 0 then
-                    ball.vel = vec_rej(ball.vel, results.s.normal)
-                    if v.obj.bounciness > 0 then
-                        ball.vel = vec_add(vec_scale(results.s.normal, v.obj.bounciness), ball.vel)
-                    end
-                end
-            end
-        end
-    end
-    
+    ball_collisions(ball, hash)
     cam:set_orbit(cam_orb_rad, curr_evt.x + pi/2)
     score += 1
 end
@@ -151,13 +117,11 @@ function _draw()
         end
     end
 
-    cam.target = ball.position
-
     -- draw scene
+    cam.target = ball.position
     begin_3d_mode(cam)
     
     draw_grid(64, 4)
-    -- draw_hash(2, 64, ball.position)
     
     for k, v in pairs(visible_objects) do 
         v:draw()
