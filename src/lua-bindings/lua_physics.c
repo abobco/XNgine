@@ -59,7 +59,7 @@ int lua_getConvexMeshBounds( lua_State *L ) {
     }
 
     lua_newtable(L);
-    for ( int i = 0; i < p->count; i++ ) {
+    for ( int i = 0; i < p->mesh_count; i++ ) {
         lua_pushinteger(L, i+1);
         lua_newtable(L);
         for ( int j = 0; j < p->meshes[i].count; j++ ) {

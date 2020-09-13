@@ -29,16 +29,22 @@ typedef struct XN_SETTINGS {
 
 #define LUA_SET_SIZE 64
 
-
-
 typedef struct PlaneSet {
     Plane *planes;
     int count;
 } PlaneSet;
 
+typedef struct OBB {
+    Vector3 cen;
+    Vector3 axes[3];
+    float extent[3];
+} OBB;
+
 typedef struct MeshSet {
     PlaneSet *meshes;
-    int count;
+    int mesh_count;
+    OBB *boxes;
+    int box_count;
 } MeshSet;
 
 typedef struct ModelSet {

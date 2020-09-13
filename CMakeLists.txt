@@ -72,7 +72,7 @@ project(XNlib)
 set( lb src/lua-bindings )
 
 set( xnlib  
-  src/util/file_io.c 
+  src/util/file_io.c src/util/linked_list.c
   src/util/bob_math.h src/util/bob_math.c src/util/collisions.c 
   ${raylib_BINARY_DIR}/src/raylib.h 
   src/servers/message_queue.c src/util/input.c src/servers/bt/gamepad_server.c

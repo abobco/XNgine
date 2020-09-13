@@ -144,3 +144,113 @@ function SphereContainer:sphere_collision(sphere)
     end
     sphere.prev_position = vec_copy(sphere.position)
 end
+
+function point_in_aabb(point, box)
+    return (point.x >= box.minX and point.x <= box.maxX) and
+         (point.y >= box.minY and point.y <= box.maxY) and
+         (point.z >= box.minZ and point.z <= box.maxZ);
+end
+
+Hash = {
+    cell_size = 32,
+    hash = {}
+}
+
+function Hash:new(size) 
+    local o = o or {}
+    setmetatable(o, {__index = self})     
+    o.cell_size = size or Hash.cell_size
+    o.hash = {}
+    return o
+end
+
+function Hash:world_to_grid(point)
+    return {
+        x = point.x // self.cell_size,
+        y = point.y // self.cell_size,
+        z = point.z // self.cell_size,
+    }
+end
+
+function Hash:get_cell(gridPos) 
+    for k, v in pairs(self.hash) do
+        if k.x == gridPos.x and k.y == gridPos.y and k.z == gridPos.z then
+            return v
+        end
+    end
+    self.hash[gridPos] = {}
+    return self.hash[gridPos]
+end
+
+function Hash:get_meshes(point)
+    return self:get_cell(self:world_to_grid(point))
+end
+
+function Hash:add_meshset(meshset)
+    local bounds=get_halfspace_bounds(meshset.model)
+    for k, v in pairs(bounds) do
+        for mk, mv in pairs(v) do 
+            local grid_pos = self:world_to_grid(vec_add(mv.point, meshset.position))
+            local cell = self:get_cell(grid_pos)
+            local found = false
+            for mmk, mmv in pairs(cell) do 
+                if mmv.model == meshset.model then 
+                    found = true
+                end
+            end
+            if not found then
+                cell[#cell+1] = meshset
+            end
+        end
+    end
+end
+
+function Hash:draw_active_cells(balls)
+    for k, v in pairs(balls) do 
+        local grid_pos = self:world_to_grid(v.position)
+        local cube_cen = vec_scale( vec(grid_pos.x, grid_pos.y, grid_pos.z), self.cell_size )
+        local ext = vec_scale( vec(1, 1, 1), self.cell_size)
+        cube_cen = vec_add( cube_cen,  vec_scale(ext, 0.5) )
+        -- cube_cen.y += ext.y
+        draw_cube_wires(
+            cube_cen,
+            vec_scale( vec(1, 1, 1), self.cell_size),
+            GREEN 
+        )
+    end
+end
+
+function Hash:print_contents()
+    for k, v in pairs(self.hash) do
+        print_vec(k, #v)
+    end
+end
+
+function draw_hash(cells, cell_size, balls)
+    for i=-cells, cells do
+        for j = 0, cells/2 do
+            for k = -cells, cells do
+                local box =  {
+                    minX = i*cell_size - cell_size/2,
+                    minY = j*cell_size,
+                    minZ = k*cell_size - cell_size/2,
+                    maxX = i*cell_size + cell_size/2,
+                    maxY = j*cell_size + cell_size,
+                    maxZ = k*cell_size + cell_size/2,
+                }
+                local color = RED
+                for k, v in pairs(balls) do
+                    if point_in_aabb(v.position, box) then 
+                        color = GREEN 
+                        break 
+                    end
+                end
+                draw_cube_wires( 
+                    vec(i*cell_size, j*cell_size + cell_size/2, k*cell_size), 
+                    vec(cell_size-0.15, cell_size-0.15, cell_size-0.2), 
+                    color 
+                )
+            end
+        end
+    end
+end

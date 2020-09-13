@@ -3,6 +3,7 @@
 #include "raylib.h"
 
 #include "../graphics/renderer.h"
+#include "../util/linked_list.h"
 
 // Setup canvas (framebuffer) to start drawing 
 int lua_BeginDrawing( lua_State *L ) {
@@ -484,14 +485,17 @@ int lua_loadModel( lua_State *L ) {
     m->models[m->count].materials[0].maps[MAP_DIFFUSE].texture = get_gamestate()->defaultTexture;
     int mesh_count = m->models[m->count].meshCount;
     m->convexMeshBounds[m->count].meshes = malloc( sizeof(PlaneSet) * mesh_count );
-    m->convexMeshBounds[m->count].count = mesh_count;
+    m->convexMeshBounds[m->count].mesh_count = 0;
+
+    m->convexMeshBounds[m->count].boxes = malloc( sizeof(OBB) * mesh_count );
+    m->convexMeshBounds[m->count].box_count = 0;
 
     printf("Model '%s' loaded:\t %d mesh%s:\n", mfile, mesh_count, mesh_count > 1 ? "es":"" );
 
     int convex_polys = 0;
+    int OBBs = 0;
     for ( int ii = 0; ii < mesh_count; ii++ ) {
         Mesh *mesh = &m->models[m->count].meshes[ii];
-
         // O(n^2) polyhedron convexity test
         // TODO: replace w/ O(n) centroid method
         bool is_convex = true;
@@ -508,72 +512,52 @@ int lua_loadModel( lua_State *L ) {
         }
 
         // get local halfspace bounds for separating axis tests
+        bool is_box = false;
         if (is_convex) {
             convex_polys++;
-            struct PlaneNode { 
-                Plane plane; 
-                struct PlaneNode *next; 
-            };
-            struct PlaneNode *bounds_list = NULL;
-            struct PlaneNode *p_iter = bounds_list;
+            ListNode *bounds_list = NULL;
+            ListNode *p_iter = bounds_list;
             int plane_count = 0;
 
             // get a temp linked list of unique planes from the triangle mesh
             for ( int i=0; i < mesh->triangleCount; i++ ) {
                 unsigned int sup_idx = mesh->indices[i*3]*3;
-                Plane new_plane = {get_vert(mesh->vertices, sup_idx),  get_vert(mesh->normals, sup_idx)};
+                Plane new_plane = { get_vert(mesh->vertices, sup_idx),  get_vert(mesh->normals, sup_idx) };
                 bool unique = true;
                 
                 // reject if new_plane's position lies on any previous plane & shares a normal w/ that plane 
                 p_iter = bounds_list;
                 while ( p_iter != NULL && unique ) {
-                    if ( fabsf( halfspace_point( p_iter->plane.point, p_iter->plane.normal, new_plane.point ) ) < EPSILON 
-                    && fabsf( Vector3DotProduct( p_iter->plane.normal, new_plane.normal ) - 1.0f ) < EPSILON ) {
+                    Plane p = *(Plane*) p_iter->data;
+                    if ( fabsf( halfspace_point( p.point, p.normal, new_plane.point ) ) < EPSILON 
+                    && fabsf( Vector3DotProduct( p.normal, new_plane.normal ) - 1.0f ) < EPSILON ) {
                         unique = false;
                     }
                     p_iter = p_iter->next;
                 }
                 if ( !unique ) continue;   
 
-                // insert new plane
-                struct PlaneNode *new_node = (struct PlaneNode*) malloc(sizeof(struct PlaneNode));
-                p_iter = bounds_list;
-                new_node->plane =  new_plane;
-                new_node->next = NULL;
+                list_append(&bounds_list, &new_plane, sizeof(Plane));
                 plane_count++;
-                if ( bounds_list == NULL ) {
-                    bounds_list = new_node;
-                    continue;
-                }
-                while ( p_iter->next != NULL ) {  
-                    p_iter = p_iter->next;
-                }   
-                p_iter->next = new_node;
             }
 
-            if ( plane_count == 6) {
+            if ( plane_count == 6 && false) {
                 // check if model is an OBB
                 int parallel_axes = 0;
+
+                // search for 3 planes w/o parallel normals
+                ListNode *unique_planes = NULL;
                 p_iter = bounds_list;
-                struct PlaneNode *unique_planes = NULL;
                 while ( p_iter != NULL ) {
-                    struct PlaneNode *compare_node = p_iter->next;
+                    ListNode *compare_node = p_iter->next;
                     while ( compare_node != NULL ) {
-                        if ( fabsf( fabsf( Vector3DotProduct( p_iter->plane.normal, compare_node->plane.normal ) ) - 1.0f )  < EPSILON ) {
+                        Plane first_plane = *(Plane*) p_iter->data;
+                        Plane comp_plane = *(Plane*) compare_node->data;
+
+                        // keep current plane if we find a plane w/ a parallel normal later in the list
+                        if ( fabsf( fabsf( Vector3DotProduct( first_plane.normal, comp_plane.normal ) ) - 1.0f )  < EPSILON ) {
                             parallel_axes++;
-                            // insert new plane
-                            struct PlaneNode *new_node = (struct PlaneNode*) malloc(sizeof(struct PlaneNode));
-                            struct PlaneNode *last = unique_planes;
-                            new_node->plane =  p_iter->plane;
-                            new_node->next = NULL;
-                            if ( unique_planes == NULL ) {
-                                unique_planes = new_node;
-                                break;
-                            }
-                            while ( last->next != NULL ) {  
-                                last = last->next;
-                            }   
-                            last->next = new_node;
+                            list_append( &unique_planes,  &first_plane, sizeof(Plane));
                             break;
                         }
                         compare_node = compare_node->next;
@@ -583,29 +567,48 @@ int lua_loadModel( lua_State *L ) {
                 if ( parallel_axes == 3 ) {
                     p_iter = unique_planes;
                     bool is_OBB = true;
+                    // check if already locally oriented
                     while ( p_iter != NULL ) {
-                        // print_vec(p_iter->plane.normal);
-                        if ( !(fabsf( fabsf( Vector3DotProduct( p_iter->plane.normal, (Vector3) {1, 0, 0})) - 1.0f) < EPSILON)
-                          && !(fabsf( fabsf( Vector3DotProduct( p_iter->plane.normal, (Vector3) {0, 1, 0})) - 1.0f) < EPSILON)
-                          && !(fabsf( fabsf( Vector3DotProduct( p_iter->plane.normal, (Vector3) {0, 0, 1})) - 1.0f) < EPSILON)) {
+                        Plane p = *(Plane*) p_iter->data;
+                        if ( !(fabsf( fabsf( Vector3DotProduct( p.normal, (Vector3) {1, 0, 0})) - 1.0f) < EPSILON)
+                          && !(fabsf( fabsf( Vector3DotProduct( p.normal, (Vector3) {0, 1, 0})) - 1.0f) < EPSILON)
+                          && !(fabsf( fabsf( Vector3DotProduct( p.normal, (Vector3) {0, 0, 1})) - 1.0f) < EPSILON)) {
                               is_OBB = false;
                         }
                         p_iter = p_iter->next;
                     }
                     if ( is_OBB ) {
+                        OBBs++;
+                        is_box = true;
+                        // convert to usable OBB data
+                        MeshSet *collider = &m->convexMeshBounds[m->count];
+                        Vector3 centroid = {0};
+                        for ( int i = 0; i < mesh->vertexCount; i++) {
+                            Vector3 v = get_vert(mesh->vertices, i*3);
+                            centroid = Vector3Add(centroid, v);
+                        }
+                        centroid = Vector3Scale(centroid, 1.0f/mesh->vertexCount);
+                        collider->boxes[collider->box_count].cen = centroid;
+
                         printf("OBB extents: (");
                         p_iter = unique_planes;
-                        while ( p_iter != NULL ) {
-                            p_iter->plane.normal.x = fabsf(p_iter->plane.normal.x);
-                            p_iter->plane.normal.y = fabsf(p_iter->plane.normal.y);
-                            p_iter->plane.normal.z = fabsf(p_iter->plane.normal.z);
+                        int i = 0;
+                        while ( p_iter != NULL && i < 3 ) {
+                            Plane *p = (Plane*) p_iter->data;
+                            p->normal.x = fabsf(p->normal.x);
+                            p->normal.y = fabsf(p->normal.y);
+                            p->normal.z = fabsf(p->normal.z);
                             
-                            float extent = fabsf( Vector3DotProduct(p_iter->plane.point, p_iter->plane.normal) );
-                            printf(" %f%s", extent, p_iter->next == NULL ? ")\n" : ", ");
-                            // print_vec(p_iter->plane.normal);
+                            float ext = fabsf( Vector3DotProduct(Vector3Subtract(p->point, centroid), p->normal) );
+                            printf(" %f%s", ext, p_iter->next == NULL ? ")\n" : ", ");
+                            
+                            // copy to global array of physics data
+                            collider->boxes[collider->box_count].extent[i] = ext;
+                            collider->boxes[collider->box_count].axes[i++] = p->normal;
 
                             p_iter = p_iter->next;
                         }
+                        collider->box_count++;
                     }
                 }
                 while ( unique_planes != NULL) {
@@ -615,14 +618,16 @@ int lua_loadModel( lua_State *L ) {
                 }
             }
 
-            // copy to global array of physics data
-            PlaneSet *bounds = &m->convexMeshBounds[m->count].meshes[ii];
-            bounds->planes = malloc( sizeof(Plane) * plane_count );
-            bounds->count = 0;
-            p_iter = bounds_list;
-            while( p_iter != NULL ) {
-                bounds->planes[bounds->count++] = p_iter->plane;
-                p_iter = p_iter->next;
+            if ( !is_box ) {
+                // copy to global array of physics data
+                PlaneSet *bounds = &m->convexMeshBounds[m->count].meshes[ii-OBBs];
+                bounds->planes = malloc( sizeof(Plane) * plane_count );
+                bounds->count = 0;
+                p_iter = bounds_list;
+                while( p_iter != NULL ) {
+                    bounds->planes[bounds->count++] = * (Plane*) p_iter->data;
+                    p_iter = p_iter->next;
+                }
             }
 
             // free temp list
@@ -631,12 +636,6 @@ int lua_loadModel( lua_State *L ) {
                 bounds_list = bounds_list->next;
                 free(p_iter);
             }
-            // for ( int i = 0; i < bounds->count; i++ ) {
-            //     print(i);
-            //     print_vec(bounds->planes[i].point);
-            //     print_vec(bounds->planes[i].normal);
-            // }
-
         }
         char mesh_type[32] = "";
         if (is_convex) strcpy(mesh_type, "convex");
@@ -646,7 +645,7 @@ int lua_loadModel( lua_State *L ) {
         if (is_convex) printf(" bounded by %d planes", m->convexMeshBounds[m->count].meshes[ii].count);
         printf("\n");
     }
-    m->convexMeshBounds[m->count].count = convex_polys;
+    m->convexMeshBounds[m->count].mesh_count = convex_polys - OBBs;
     lua_pushinteger(L, m->count++);
 
     return 1;

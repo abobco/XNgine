@@ -16,6 +16,7 @@ obstacles = {
 
 ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, ORANGE)
 ball.vel = vec(0,0,0)
+ball.max_spd = 1
 
 visible_objects = { ball }
 active_object = obstacles[1]
@@ -47,20 +48,25 @@ function respawn()
 end
 
 cam_ang_speed = 0
-cam_orb_rad = 32
-cam = Camera:new( vec_add(ball.position, vec(cam_orb_rad, 16, 0)),     -- position
+cam_orb_rad = 64
+cam = Camera:new( vec_add(ball.position, vec(cam_orb_rad, cam_orb_rad/2, 0)),     -- position
                   ball.position,                                       -- target
                   vec(0, 1, 0) )                                       -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
 
-function cam:set_orbit( radius)
-    cam.position = vec_lerp( cam.position, vec_add( ball.position, vec(0,16, radius)), 0.05)
+function cam:set_orbit( radius, angle)
+    angle = angle or pi/2
+
+    cam.position = vec_lerp( cam.position, vec_add( ball.position, vec(cos(angle)*radius, cam_orb_rad/2, sin(angle)*radius)), 0.05)
 end
 
 -- _fixedUpdate() is called at 60 hz
 function _fixedUpdate()
     -- physics update
     ball.vel.y += gravity.y
+    -- if vec_len(ball.vel) > ball.max_spd then
+    --     ball.vel = vec_scale(vec_norm(ball.vel), ball.max_spd)
+    -- end
     ball.position = vec_add(ball.position, ball.vel)
 
     -- respawn check
@@ -105,7 +111,7 @@ function _fixedUpdate()
                     local collision_center = vec_sub(ball.position, plane_to_sphere )
                     local radius = vec_len(vec_sub(collision_center, v.obj.position))
                     local angular_vel = vec_sub(v.obj.eulers, v.obj.prev_eulers)
-                    local linear_vel = vec_scale( results.s.normal, vec_len(vec_scale(angular_vel, radius*0.3)))
+                    local linear_vel = vec_scale( results.s.normal, vec_len(vec_scale(angular_vel, radius*0.2)))
                     ball.vel = vec_add(ball.vel, linear_vel)
                 end
                 
@@ -119,7 +125,7 @@ function _fixedUpdate()
         end
     end
     
-    cam:set_orbit(cam_orb_rad)
+    cam:set_orbit(cam_orb_rad, curr_evt.x + pi/2)
     score += 1
 end
 
@@ -151,6 +157,8 @@ function _draw()
     begin_3d_mode(cam)
     
     draw_grid(64, 4)
+    -- draw_hash(2, 64, ball.position)
+    
     for k, v in pairs(visible_objects) do 
         v:draw()
     end
