@@ -16,7 +16,8 @@ MeshSet = {
     model = 0,
     tint = WHITE,
     eulers = vec(pi/2,0,0),
-    bounciness = 0
+    target_eulers = vec(pi/2, 0, 0),
+    bounciness = 0,
 }
 
 function MeshSet:new(pos, model, tint)
@@ -27,6 +28,7 @@ function MeshSet:new(pos, model, tint)
     o.tint = tint or MeshSet.tint
     o.eulers = MeshSet.eulers
     o.bounciness = MeshSet.bounciness
+    o.target_eulers = vec_copy(MeshSet.target_eulers)
 
     model_rotate_euler(o.model, pi/2, 0, 0)
     return o
@@ -264,7 +266,7 @@ function ball_collisions(ball, hash)
                     local collision_center = vec_sub(ball.position, plane_to_sphere )
                     local radius = vec_len(vec_sub(collision_center, v.obj.position))
                     local angular_vel = vec_sub(v.obj.eulers, v.obj.prev_eulers)
-                    local linear_vel = vec_scale( results.s.normal, vec_len(vec_scale(angular_vel, radius*0.3)))
+                    local linear_vel = vec_scale( results.s.normal, vec_len(vec_scale(angular_vel, radius*0.15)))
                     ball.vel = vec_add(ball.vel, linear_vel)
                 end
                 

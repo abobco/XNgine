@@ -7,12 +7,15 @@ curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
 obstacles = {
-    MeshSet:new(vec(  0,  8,  0), load_model("../models/bigpaddle.iqm"), BEIGE),
-    MeshSet:new(vec(  0, 10,-30), load_model("../models/bigpaddle.iqm"), BEIGE),
-    MeshSet:new(vec(-30, 16,-30), load_model("../models/bigpaddle.iqm"), BEIGE),
+    MeshSet:new(vec(  0,  8,  0), load_model("../models/bumper_paddle_f.iqm"), BEIGE),
+    MeshSet:new(vec(  0, 10,-30), load_model("../models/bumper_paddle_l.iqm"), BEIGE),
+    MeshSet:new(vec(-30, 20,-30), load_model("../models/bumper_paddle_r.iqm"), BEIGE),
+    MeshSet:new(vec(  0, 30,-30), load_model("../models/bumper_paddle_f.iqm"), BEIGE),
+    MeshSet:new(vec(  0, 35,-60), load_model("../models/bigpaddle.iqm"), BEIGE),
     
-    MeshSet:new(vec(-30,  8,-10), load_model("../models/tower.iqm"), BEIGE)
+    -- MeshSet:new(vec(-30,  8,-10), load_model("../models/tower.iqm"), BEIGE)
 }
+-- obstacles[2].target_eulers.y -= pi/2
 
 ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, ORANGE)
 ball.vel = vec(0,0,0)
@@ -25,18 +28,18 @@ for k, v in pairs(obstacles) do
     visible_objects[#visible_objects+1] = v
 end
 
-bouncey_bois = {}
-for i = 0, 3 do
-    bouncey_bois[#bouncey_bois+1] = MeshSet:new( vec( -i*16, 8, -60),  load_model("../models/bigpaddle.iqm"), RED )
-end 
+-- bouncey_bois = {}
+-- for i = 0, 3 do
+--     bouncey_bois[#bouncey_bois+1] = MeshSet:new( vec( -i*16, 8, -60),  load_model("../models/bigpaddle.iqm"), RED )
+-- end 
 
-for k, v in pairs(bouncey_bois) do
-    obstacles[#obstacles+1] = v
-    v.bounciness = 0.5
-end
+-- for k, v in pairs(bouncey_bois) do
+--     obstacles[#obstacles+1] = v
+--     v.bounciness = 0.5
+-- end
 
 -- spacial hash grid
-hash = Hash:new(40)
+hash = Hash:new(16)
 for k, v in pairs(obstacles) do
     visible_objects[#visible_objects+1] = v
     hash:add_meshset(v)
@@ -81,17 +84,17 @@ function _fixedUpdate()
     for k, v in pairs(obstacles) do
         if v.model == active_object.model then
             v.prev_eulers = vec_copy(v.eulers)
-            v.eulers = vec_lerp(v.eulers, vec(curr_evt.y + pi/2,  correction_ang,  curr_evt.z), 0.1)
+            v.eulers = vec_lerp(v.eulers, vec_add(v.target_eulers, vec(curr_evt.y,  correction_ang,  curr_evt.z)), 0.1)
         elseif v.bounciness > 0 then
             v.eulers = vec_lerp(v.eulers, vec(3*pi/8, correction_ang, 0), 0.1)
         else
-            v.eulers = vec_lerp(v.eulers, vec(pi/2, correction_ang, 0), 0.1) -- rotate to rest position
+            v.eulers = vec_lerp(v.eulers, vec_add(v.target_eulers, vec(0, correction_ang, 0)), 0.1) -- rotate to rest position
         end
         model_rotate_euler(v.model, v.eulers.x,  v.eulers.y,  v.eulers.z)
     end
 
     ball_collisions(ball, hash)
-    cam:set_orbit(cam_orb_rad, curr_evt.x + pi/2)
+    cam:set_orbit(cam_orb_rad, curr_evt.x/2 + pi/2)
     score += 1
 end
 
@@ -106,11 +109,11 @@ function _draw()
             if msg.id == 0 then
                 local scale = 2
                 -- filthy attempt to correct flipping in gimbal lock situations
-                if abs(curr_evt.z+msg.z*2) < 0.1 and abs(curr_evt.y -msg.y*2) > pi/4 then 
-                    correction_ang += pi 
+                -- if abs(curr_evt.z+msg.z*2) < 0.1 and abs(curr_evt.y -msg.y*2) > pi/4 then 
+                --     correction_ang += pi 
                     -- msg.z*=-1
                     -- msg.y += pi
-                end
+                -- end
                 curr_evt = vec_scale( vec(msg.x, msg.y, msg.z), scale)
                 -- if  abs(curr_evt.y) > pi/2 then curr_evt.y +=pi curr_evt.z+=pi end
             end
