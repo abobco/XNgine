@@ -1,5 +1,6 @@
 ## examples
 
+ * [catapult.lua](catapult.lua) - physics system
  * [3d.lua](3d.lua) - 3D model & animation loading, camera management, model rotation
  * [2d.lua](2d.lua) - draw text, geometry primitives, textures. Apply a post processing shader to the frame.
  * [shaders.lua](shaders.lua) - signed distance field shader for a trIPpY effect

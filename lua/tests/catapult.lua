@@ -53,7 +53,6 @@ hash = Hash:new(40)
 for k, v in pairs(obstacles) do
     hash:add_meshset(v)
 end
--- hash:print_contents()
 
 cam = Camera:new( vec_add(catapult_ball.position, vec(0, 32, 32)),     -- position
                   catapult_ball.position,                              -- target
@@ -66,10 +65,12 @@ function cam:set_orbit( radius, angle)
     angle = angle or pi/2
     cam.position = vec_lerp( 
         cam.position, 
-        vec_add( cam.target_ball.position, vec(cos(angle)*radius, 2*radius/3, sin(angle)*radius)), 0.05)
+        vec_add( cam.target_ball.position, vec(cos(angle)*radius, 2*radius/3, sin(angle)*radius)), 
+        0.05
+    )
 end
 
--- call these from lua console at run time
+-- call these from the lua console to launch the ball
 function shoot()
     catapult_arm.time_shot = 0
     catapult_arm.target_eulers = vec(pi/2, 0, pi/2)
