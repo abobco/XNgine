@@ -163,6 +163,65 @@ int lua_getConvexMeshBounds( lua_State *L ) {
 
     return 1;
 }
+
+int lua_separatingAxisSphere(lua_State *L) {
+    int id = luaL_checkinteger(L, 1);
+    Vector3 sphere_cen = lua_getVector3(L, 2);
+    float sphere_rad = luaL_checknumber(L, 3);
+
+    MeshSet *meshset = &get_gamestate()->modelSet.convexMeshBounds[id];
+    Model *model =  &get_gamestate()->modelSet.models[id];
+    Vector3 *poly_pos = &get_gamestate()->modelSet.positions[id];
+
+    lua_newtable(L);
+    int overlap_count = 0;
+    for ( int i =0; i < meshset->mesh_count; i++ ) {
+        PlaneSet *bounds = &meshset->meshes[i];
+        Plane transformed_planes[bounds->count];
+        PlaneSet transformed_bounds = { transformed_planes, bounds->count };
+
+        for ( int j = 0; j < bounds->count; j++ ) {
+            transformed_bounds.planes[j] = bounds->planes[j];
+            Plane *plane = &transformed_bounds.planes[j];
+
+            plane->point = Vector3Transform(plane->point, model->transform);
+            plane->point = Vector3Add(plane->point, *poly_pos);
+            plane->normal = Vector3Transform(plane->normal, model->transform);
+
+            // print(j);
+            // print_vec(transformed_bounds.planes[j].point);
+            // print_vec(transformed_bounds.planes[j].normal);
+        }
+
+        Plane closest;
+        float dist;
+        if ( sep_axis_sphere(&transformed_bounds, &sphere_cen, sphere_rad, &closest, &dist ) ) {
+            lua_pushinteger(L, ++overlap_count);
+            lua_newtable(L);
+
+                lua_pushstring(L, "d");
+                lua_pushnumber(L, dist);
+                lua_settable(L, -3);
+
+                lua_pushstring(L, "s");
+                lua_newtable(L);
+
+                    lua_pushstring(L, "point");
+                    lua_pushVector3(L, closest.point);
+                    lua_settable(L, -3);
+
+                    lua_pushstring(L, "normal");
+                    lua_pushVector3(L, closest.normal);
+                    lua_settable(L, -3);
+
+                lua_settable(L, -3);
+
+            lua_settable(L, -3);
+        }
+    }
+    
+    return 1;
+}
  
 int lua_rotateVectorEulers( lua_State *L ) {
     Vector3 vec = lua_getVector3(L, 1);
@@ -204,4 +263,19 @@ int lua_MatrixTranslate( lua_State *L ) {
     Vector3 t = lua_getVector3(L, 2);
     get_gamestate()->modelSet.models[id].transform = MatrixTranslate( t.x, t.y, t.z);
     return 0;
+}
+
+int lua_setModelPosition( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    get_gamestate()->modelSet.positions[id] = lua_getVector3(L, 2);
+
+    return 0;
+}
+
+int lua_transformVectorByMatrix( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    Vector3 vec = lua_getVector3(L, 2);
+    lua_pushVector3(L, Vector3Transform(vec, get_gamestate()->modelSet.models[id].transform ) );
+
+    return 1;
 }

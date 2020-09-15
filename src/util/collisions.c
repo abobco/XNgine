@@ -6,6 +6,8 @@
 
 #define NEAR_TAIL_LENGTH 1
 
+int sep_axis_sphere(PlaneSet *bounds, Vector3 *sphere_cen, float sphere_rad,  Plane *closest, float *dist);
+
 struct Maxima {
     float min;
     float max;
@@ -167,24 +169,83 @@ static void clamp_to_bound(float *m, Vector3 *b, Vector3 *d ) {
     *m = minval; *d = disp;
 }
 
-void sep_axis_sphere(PlaneSet *bounds, Vector3 *sphere_cen, float sphere_rad,  Plane *closest, float *dist) {
-    float closest_d = -FLT_MAX;
+static void closet_pt_point_OBB( Vector3 *p, OBB *b, Vector3 *q) {
+    Vector3 d= Vector3Subtract(*p, b->cen);
+    *q = b->cen;
 
-    for ( int i = 0; i < bounds->count; i++ ){
-        Plane *plane = &bounds->planes[i];
-        Vector3 closest_on_sphere = Vector3Scale(plane->normal, sphere_rad);
-        closest_on_sphere = Vector3Add(closest_on_sphere, *sphere_cen);
-        Vector3 separation = Vector3Subtract(closest_on_sphere, plane->point);
-        float d = Vector3DotProduct(plane->normal, separation);
+    for ( int i = 0; i < 3; i++ ) {
+        // project d onto the axis
+        float dist = Vector3DotProduct(d, b->axes[i]);
+
+        if ( dist >  b->extent[i] ) dist = b->extent[i];
+        if ( dist < -b->extent[i] ) dist = -b->extent[i];
         
-        if ( d > 0 ) 
-            return;
+        *q = Vector3Add( *q,  Vector3Scale( b->axes[i], dist));
+    } 
+}
 
-        if ( d > closest_d ) {
-            closest_d = d;
-            closest = plane;
+static float sq_dist_point_OBB( Vector3 *p, OBB *b ) {
+    Vector3 closest;
+    closet_pt_point_OBB(p, b, &closest);
+    closest = Vector3Subtract(closest, *p);
+
+    return Vector3DotProduct(closest, closest); 
+}
+
+void sphere_OBBs_collisions(Vector3 *sphere_cen, float sphere_rad, ModelSet *modelset ) {
+    for ( int i = 0; i < modelset->count; i++ ) { 
+        MeshSet *submeshes = &modelset->convexMeshBounds[i];
+        for ( int j = 0; j < submeshes->box_count; j++ ) {
+            OBB *box = &submeshes->boxes[j];
+            Vector3 original_box_cen = box->cen;
+            Vector3 original_axes[3];
+            for (int k = 0; k < 3; k++ ) {
+                original_axes[k] = box->axes[k];
+            } 
+            
+            // transform to same coord system
+            box->cen = Vector3Transform(box->cen, modelset->models[i].transform); 
+            box->cen = Vector3Add(box->cen, modelset->positions[i]);
+            for ( int k = 0; k < 3; k++ ) {
+                box->axes[k] = Vector3Transform(box->axes[k], modelset->models[i].transform);
+            }
+
+            Vector3 closest;
+            closet_pt_point_OBB(sphere_cen, box, &closest);
+            Vector3 sphere_to_box = Vector3Subtract(closest, *sphere_cen);
+            float dist = Vector3DotProduct(sphere_to_box, sphere_to_box); 
+
+            if ( dist < EPSILON ) {
+                // clamp sphere center to closest side
+                // float closest_extent[3] = { FLT_MAX, FLT_MAX, FLT_MAX };
+                // float closest_d = FLT_MAX;
+                // float extent_to_move = 0;
+                // Vector3 axis_to_move = {0}; 
+                // Vector3 d = Vector3Subtract(*sphere_cen, box->cen);
+                
+                // float d1 = Vector3Subtract(Vector3Scale(box->axes[0], box->extent[0]), d);
+                // float d2 = Vector3Subtract(Vector3Scale(Vector3Negate(box->axes[0]), box->extent[0]), d);
+                // if ( Vector3Subtract(Vector3Scale(box->axes[0], box->extent[0]), d) < closest_d ) {
+                //     closest_d = d; 
+                //     extent_to_move = box->extent[0];
+                //     axis_to_move = box->axis[0];
+                // } 
+                // if ( Vector3Subtract(Vector3Scale(Vector3Negate(box->axes[0]), box->extent[0]), d) < closest_d ) {
+                //     closest_d = d; 
+                //     extent_to_move = Vector3Negate(box->axes[0]);
+                //     axis_to_move = box->axis[0];
+                // }
+                    
+            } else if ( dist < sphere_rad*sphere_rad ) {
+                Vector3 n = Vector3Scale( Vector3Negate( Vector3Normalize(sphere_to_box) ), sphere_rad - dist);
+                *sphere_cen = Vector3Add(*sphere_cen, n);
+            }
+
+            // transform back to local
+            box->cen = original_box_cen;
+            for (int k = 0; k < 3; k++ ) {
+                box->axes[k] = original_axes[k];
+            } 
         }
     }
-
-    *dist = closest_d;
 }

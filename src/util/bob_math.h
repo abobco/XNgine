@@ -8,6 +8,7 @@ extern "C" {
 #include "raymath.h"
 #include "math.h"
 #include <stdlib.h>
+#include <float.h>
 // #include "../snake.h"
 // #include "../lua-bindings/lua_util.h"
 
@@ -19,6 +20,11 @@ typedef struct Plane {
     Vector3 point;
     Vector3 normal;
 } Plane;
+
+typedef struct PlaneSet {
+    Plane *planes;
+    int count;
+} PlaneSet;
 
 int convex_poly_collision( Vector2* a, int a_n, Vector2 *b, int b_n );
 
@@ -64,8 +70,37 @@ inline Vector2 transform_vec2( Vector2 p, Vector2 origin, float angle ) {
     
     float tx = c*p.x - s*p.y;
     float ty = s*p.x + c*p.y;
-    Vector2 res = { origin.x + tx, origin.y + ty};
-    return res;
+    return (Vector2) { origin.x + tx, origin.y + ty};
+}
+
+// sphere-convex polyhedron separating axis test
+inline int sep_axis_sphere(PlaneSet *bounds, Vector3 *sphere_cen, float sphere_rad,  Plane *closest, float *dist) {
+    float closest_d = -FLT_MAX;
+
+    for ( int i = 0; i < bounds->count; i++ ){
+        Plane *plane = &bounds->planes[i];
+        Vector3 closest_on_sphere = Vector3Scale(plane->normal, sphere_rad);
+        closest_on_sphere = Vector3Subtract(*sphere_cen, closest_on_sphere);
+        Vector3 separation = Vector3Subtract(closest_on_sphere, plane->point);
+        float d = Vector3DotProduct(plane->normal, separation);
+        
+        if ( d > 0 ) {
+            // printf("%d\n", 0);
+            return 0;
+        }
+            
+
+        if ( d > closest_d ) {
+            closest_d = d;
+            closest->normal = plane->normal;
+            closest->point = plane->point;
+            // printf("%f %f %f \n", closest->normal.x, closest->normal.y, closest->normal.z );
+        }
+    }
+
+    // printf("%d\n", 1);
+    *dist = closest_d;
+    return 1;
 }
 
 #ifdef __cplusplus

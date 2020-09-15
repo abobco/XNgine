@@ -708,6 +708,15 @@ int lua_drawModel( lua_State *L ) {
     return 0;
 }
 
+int lua_drawModelBasic( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    Vector3 pos = lua_getVector3(L, 2);
+    Color col = lua_getColor(L, 3);
+
+    DrawModel(get_gamestate()->modelSet.models[id], pos, 1.0, col );
+    return 0;
+}
+ 
 // Draw a model wires (with texture if set) 
 int lua_DrawModelWires( lua_State *L ) {
     // draw_model_generic(L, &DrawModelWiresEx);

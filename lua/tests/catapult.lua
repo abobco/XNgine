@@ -3,6 +3,7 @@ dofile("../lua/util/physics.lua")
 
 gravity = vec(0,-0.01, 0)
 time = 0
+curr_evt = vec(0,0,0)
 
 -- flat obstacles
 bounce_platforms = {
@@ -31,11 +32,11 @@ balls = { catapult_ball, ramp_ball }
 local ramp_offset =  vec(4.5, -5, 0)
 halfsphere_ramp =  {
     mesh = MeshSet:new( vec_add(ramp_ball.position, ramp_offset), load_model("../models/halfsphere.iqm")),
-    collider = SphereContainer:new( vec_add(ramp_ball.position, ramp_offset), 4.8)
+    collider = SphereContainer:new( vec_add(ramp_ball.position, ramp_offset), 4.8 )
 }
 
 obstacles = { catapult_arm , bucket }
-visible_objects = {  catapult_ball, ramp_ball, bucket, halfsphere_ramp.mesh , catapult_arm }
+visible_objects = { catapult_ball, ramp_ball, bucket, halfsphere_ramp.mesh , catapult_arm }
 
 -- set up bounce platforms for chain reaction
 for k, v in pairs(bounce_platforms) do
@@ -52,13 +53,14 @@ hash = Hash:new(40)
 for k, v in pairs(obstacles) do
     hash:add_meshset(v)
 end
-hash:print_contents()
+-- hash:print_contents()
 
 cam = Camera:new( vec_add(catapult_ball.position, vec(0, 32, 32)),     -- position
                   catapult_ball.position,                              -- target
                   vec(0, 1, 0) )                              -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
 cam.target_ball = catapult_ball
+cam.orbit_radius = 32
 
 function cam:set_orbit( radius, angle)
     angle = angle or pi/2
@@ -86,12 +88,17 @@ function _fixedUpdate()
         v.position = vec_add(v.position, v.vel)
     end
 
+    local hsr = halfsphere_ramp.mesh
+    hsr.prev_eulers = vec_copy(hsr.eulers)
+    hsr.eulers = vec_lerp(hsr.eulers, vec_add(hsr.target_eulers, vec(curr_evt.y,  0,  curr_evt.z)), 0.1)
+    model_rotate_euler(hsr.model, hsr.eulers.x, hsr.eulers.y, hsr.eulers.z)
+
     -- respawn check
     if catapult_ball.position.y < spawn_plane then
         respawn()
     end 
 
-    halfsphere_ramp.collider:sphere_collision(ramp_ball)
+    halfsphere_ramp.collider:sphere_collision(ramp_ball, halfsphere_ramp.mesh.model)
     
     -- rotate catapult_arm
     catapult_arm.time_shot += 1
@@ -103,13 +110,28 @@ function _fixedUpdate()
     catapult_arm.eulers = vec_lerp(catapult_arm.eulers, catapult_arm.target_eulers, 0.03)
     model_rotate_euler(catapult_arm.model, catapult_arm.eulers.x, catapult_arm.eulers.y, catapult_arm.eulers.z)
 
-    ball_collisions(catapult_ball, hash)
+    ball_collisions(catapult_ball, hash, 0.3)
    
-    cam:set_orbit(80, pi/2-time*0.0016)
+    -- cam:set_orbit(cam.orbit_radius, pi/2-time*0.0016)
+    cam:set_orbit(cam.orbit_radius, pi/2)
 end
 
 -- _draw() is called once every frame update
 function _draw()
+
+    -- handle input
+    local msglist = server.pop() 
+    for i=1, msglist:size() do
+        local msg = msglist:get(i)
+        if msg.type == MSG_MOTION_VECTOR then
+            if msg.id == 0 then
+                local scale = 2
+                curr_evt = vec_scale( vec(msg.x, msg.y, msg.z), scale)
+                cam.target_ball = ramp_ball
+            end
+        end
+    end
+
     cam.target = cam.target_ball.position
 
     begin_3d_mode(cam)

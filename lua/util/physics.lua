@@ -31,17 +31,12 @@ function MeshSet:new(pos, model, tint)
     o.target_eulers = vec_copy(MeshSet.target_eulers)
 
     model_rotate_euler(o.model, pi/2, 0, 0)
+    model_set_position(o.model, o.position)
     return o
 end
 
 function MeshSet:draw()
-    draw_model(self.model,
-               self.position,
-            --    vec(0,0,0),
-               vec(1, 0, 0),    
-               0,
-               vec(1, 1, 1), 
-               self.tint )
+    draw_model_basic(self.model, self.position, self.tint )
 end
 
 Sphere = { 
@@ -68,41 +63,11 @@ function Sphere:draw()
     draw_sphere(self.position, self.radius, self.color)
 end
 
-function vec_rej(a,b)
-    local nb = vec_norm(b)
-    local proj = vec_scale(nb, vec_dot(a, nb))
-    return vec_sub(a, proj)
-end
-
-function halfspace_distance( plane, norm, point )
-    local d = vec_sub(point, plane)
-    return vec_dot(norm, d)
-end
-
-function sep_axis(sides, sphere) 
-    local closest_d = math.mininteger
-    local closest_side = {}
-    for k, side in pairs(sides) do
-        -- get signed distance to the plane
-        local closest_pt_on_sphere = vec_scale(vec_neg(side.normal), sphere.radius)
-        closest_pt_on_sphere = vec_add(closest_pt_on_sphere, sphere.position)
-        local d = halfspace_distance(side.point, side.normal, closest_pt_on_sphere)
-        
-        if d > 0 then return false
-        elseif d > closest_d then
-            closest_d = d
-            closest_side = side
-        end
-    end
-
-    return {d=closest_d, s=closest_side}
-end
-
 SphereContainer = { 
     position = vec(0,0,0),
     radius = 5,
     color = TRANSPARENT,
-    up = vec(0,1,0)
+    top = Plane:new()
 }
 
 function SphereContainer:new(pos, radius, color)
@@ -111,13 +76,17 @@ function SphereContainer:new(pos, radius, color)
     o.position = pos or vec_copy(SphereContainer.position)
     o.radius = radius or SphereContainer.radius
     o.color = color or SphereContainer.color
-    o.up = vec_copy(SphereContainer.up)
+    -- o.up = vec_copy(SphereContainer.up)
+    o.top = Plane:new(o.position, vec(0,0, 1))
     return o
 end
 
-function SphereContainer:sphere_collision(sphere)
+function SphereContainer:sphere_collision(sphere, model)
     -- TODO: replace this conditional w/ quad collision test for the top of the box container
-    if sphere.position.y < self.position.y + 0.2 then 
+    -- if sphere.position.y < self.position.y + 0.2 then 
+    local orig_n = vec_copy(self.top.normal)
+    self.top.normal = vec_transform_model_matrix( model, self.top.normal )
+    if sep_axis({ self.top }, sphere) then 
         sphere.control_object = self
         local d = vec_sub(sphere.position, self.position)
         if vec_len_sqr(d) > ((self.radius - sphere.radius)*(self.radius - sphere.radius)) then
@@ -141,26 +110,11 @@ function SphereContainer:sphere_collision(sphere)
         end
     elseif sphere.control_object == self then
         local spd = vec_len(sphere.vel)
-        sphere.vel = vec_scale( vec_norm(vec_sub(sphere.vel, vec_rej(sphere.vel, gravity))), spd)
+        sphere.vel = vec_scale( vec_norm(vec_sub(sphere.vel, vec_rej(sphere.vel, self.top.normal))), spd)
         sphere.control_object = nil
     end
     sphere.prev_position = vec_copy(sphere.position)
-end
-
-function point_in_aabb(point, box)
-    return (point.x >= box.minX and point.x <= box.maxX) and
-           (point.y >= box.minY and point.y <= box.maxY) and
-           (point.z >= box.minZ and point.z <= box.maxZ);
-end
-
-
-function dist_sqr_point_aabb(point, aabb)
-    local sqr_dist = 0
-    for k, v in pairs(point) do
-        if v < aabb.min[k] then sqr_dist = (aabb.min[k] - v)*(aabb.min[k] - v) end
-        if v > aabb.max[k] then sqr_dist = (aabb.max[k] - v)*(aabb.max[k] - v) end
-    end
-    return sqr_dist
+    self.top.normal = orig_n
 end
 
 Hash = {
@@ -213,7 +167,7 @@ function Hash:add_meshset(meshset)
                     local cell_pos = vec_add(grid_pos, vec(i,j,k))
                     local cell = self:get_cell(cell_pos)
                     cell[#cell+1] = meshset
-                    print_vec(cell_pos, "model "..meshset.model.." cell pos:")
+                    -- print_vec(cell_pos, "model "..meshset.model.." cell pos:")
                 end
             end
         end
@@ -241,40 +195,76 @@ function Hash:print_contents()
     end
 end
 
-function ball_collisions(ball, hash) 
+function vec_rej(a,b)
+    -- local nb = vec_norm(b)
+    local proj = vec_scale(b, vec_dot(a, b))
+    return vec_sub(a, proj)
+end
+
+function halfspace_distance( plane, norm, point )
+    local d = vec_sub(point, plane)
+    return vec_dot(norm, d)
+end
+
+function point_in_aabb(point, box)
+    return (point.x >= box.minX and point.x <= box.maxX) and
+           (point.y >= box.minY and point.y <= box.maxY) and
+           (point.z >= box.minZ and point.z <= box.maxZ);
+end
+
+function dist_sqr_point_aabb(point, aabb)
+    local sqr_dist = 0
+    for k, v in pairs(point) do
+        if v < aabb.min[k] then sqr_dist = (aabb.min[k] - v)*(aabb.min[k] - v) end
+        if v > aabb.max[k] then sqr_dist = (aabb.max[k] - v)*(aabb.max[k] - v) end
+    end
+    return sqr_dist
+end
+
+function sep_axis(sides, sphere) 
+    local closest_d = math.mininteger
+    local closest_side = {}
+    for k, side in pairs(sides) do
+        -- get signed distance to the plane
+        local closest_pt_on_sphere = vec_scale(vec_neg(side.normal), sphere.radius)
+        closest_pt_on_sphere = vec_add(closest_pt_on_sphere, sphere.position)
+        local d = halfspace_distance(side.point, side.normal, closest_pt_on_sphere)
+        
+        if d > 0 then return false
+        elseif d > closest_d then
+            closest_d = d
+            closest_side = side
+        end
+    end
+
+    return {d=closest_d, s=closest_side}
+end
+
+function ball_collisions(ball, hash, angular_vel_scale)
+    angular_vel_scale = angular_vel_scale or 0.15 
     local bodies = {}
     -- for k, v in pairs(obstacles) do
     for k, v in pairs(hash:get_meshes(ball.position)) do
-        bodies[k] = { obj=v, bounds=get_halfspace_bounds(v.model) }
-    end
-
-    -- separating axis overlap tests
-    for k, v in pairs(bodies) do
-        for mk, mv in pairs(v.bounds) do
-            -- translate planes to world space
-            for mmk, mmv in pairs(mv) do
-                mmv.point = vec_add(v.obj.position, mmv.point)
+        local results = separating_axis_sphere(v.model, ball.position, ball.radius)
+        for mk, mv in pairs(results) do
+            active_object = v
+            local plane_to_sphere = vec_scale(mv.s.normal, mv.d)
+            ball.position = vec_sub(ball.position, plane_to_sphere)
+            if v.prev_eulers and v.bounciness == 0 then
+                -- apply angular velocity
+                local collision_center = vec_sub(ball.position, plane_to_sphere )
+                local radius = vec_len(vec_sub(collision_center, v.position))
+                local angular_vel = vec_sub(v.eulers, v.prev_eulers)
+                local linear_vel = vec_scale( mv.s.normal, vec_len(vec_scale(angular_vel, radius*angular_vel_scale)))
+                ball.vel = vec_add(ball.vel, linear_vel)
             end
             
-            local results = sep_axis(mv, ball)
-            if results then
-                active_object = v.obj
-                local plane_to_sphere = vec_scale(results.s.normal, results.d)
-                ball.position = vec_sub(ball.position, plane_to_sphere)
-                if v.obj.prev_eulers and v.obj.bounciness == 0 then
-                    -- apply angular velocity
-                    local collision_center = vec_sub(ball.position, plane_to_sphere )
-                    local radius = vec_len(vec_sub(collision_center, v.obj.position))
-                    local angular_vel = vec_sub(v.obj.eulers, v.obj.prev_eulers)
-                    local linear_vel = vec_scale( results.s.normal, vec_len(vec_scale(angular_vel, radius*0.15)))
-                    ball.vel = vec_add(ball.vel, linear_vel)
-                end
-                
-                if vec_dot(ball.vel, results.s.normal) < 0 then
-                    ball.vel = vec_rej(ball.vel, results.s.normal)
-                    if v.obj.bounciness > 0 then
-                        ball.vel = vec_add(vec_scale(results.s.normal, v.obj.bounciness), ball.vel)
-                    end
+            local dot = vec_dot(ball.vel, mv.s.normal)
+            if dot < 0 then
+                local proj = vec_scale(mv.s.normal, dot)
+                ball.vel = vec_sub(ball.vel, proj)
+                if v.bounciness > 0 then
+                    ball.vel = vec_add(vec_scale(mv.s.normal, v.bounciness), ball.vel)
                 end
             end
         end

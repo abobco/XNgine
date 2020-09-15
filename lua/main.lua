@@ -10,12 +10,23 @@ obstacles = {
     MeshSet:new(vec(  0,  8,  0), load_model("../models/bumper_paddle_f.iqm"), BEIGE),
     MeshSet:new(vec(  0, 10,-30), load_model("../models/bumper_paddle_l.iqm"), BEIGE),
     MeshSet:new(vec(-30, 20,-30), load_model("../models/bumper_paddle_r.iqm"), BEIGE),
-    MeshSet:new(vec(  0, 30,-30), load_model("../models/bumper_paddle_f.iqm"), BEIGE),
+    MeshSet:new(vec(  0, 30,-30), load_model("../models/bumper_paddle_fb.iqm"), BEIGE),
     MeshSet:new(vec(  0, 35,-60), load_model("../models/bigpaddle.iqm"), BEIGE),
+    MeshSet:new(vec(  0, 34,-89), load_model("../models/2x3x20.iqm"), BEIGE),
+    MeshSet:new(vec(  0, 40,-140), load_model("../models/bigpaddle.iqm"), BEIGE),
     
     -- MeshSet:new(vec(-30,  8,-10), load_model("../models/tower.iqm"), BEIGE)
 }
--- obstacles[2].target_eulers.y -= pi/2
+
+spinners =  {
+    -- MeshSet:new(vec(  0, 60, -65), load_model("../models/3x2x20.iqm"), BEIGE),
+    MeshSet:new(vec(  0, 58, -80), load_model("../models/3x2x20.iqm"), BEIGE),
+    MeshSet:new(vec(  0, 58,-105), load_model("../models/3x2x20.iqm"), BEIGE)
+}
+for k, v in pairs(spinners) do
+    obstacles[#obstacles+1] = v
+    v.target_eulers = vec(0,0,0)
+end
 
 ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, ORANGE)
 ball.vel = vec(0,0,0)
@@ -44,7 +55,7 @@ for k, v in pairs(obstacles) do
     visible_objects[#visible_objects+1] = v
     hash:add_meshset(v)
 end
-hash:print_contents()
+-- hash:print_contents()
 
 spawn_pos = vec_add(obstacles[1].position, vec(0, 6, 0))
 spawn_plane = -18
@@ -82,7 +93,17 @@ function _fixedUpdate()
 
     -- rotate objects towards target
     for k, v in pairs(obstacles) do
-        if v.model == active_object.model then
+        local spinner_k = nil
+        for mk, mv in pairs(spinners) do 
+            if v.model == mv.model then 
+                spinner_k = mk
+                break
+            end
+        end
+        if spinner_k then 
+            v.target_eulers.z = v.target_eulers.z + 0.01*spinner_k 
+            v.eulers = vec_lerp(v.eulers, vec_add(v.target_eulers, vec(0, correction_ang, 0)), 0.1) 
+        elseif v.model == active_object.model then
             v.prev_eulers = vec_copy(v.eulers)
             v.eulers = vec_lerp(v.eulers, vec_add(v.target_eulers, vec(curr_evt.y,  correction_ang,  curr_evt.z)), 0.1)
         elseif v.bounciness > 0 then
@@ -124,7 +145,7 @@ function _draw()
     cam.target = ball.position
     begin_3d_mode(cam)
     
-    draw_grid(64, 4)
+    draw_grid(64, 8)
     
     for k, v in pairs(visible_objects) do 
         v:draw()
@@ -133,5 +154,5 @@ function _draw()
     end_3d_mode()
 
     draw_fps()
-    draw_text("score: "..score, screen_center.x-40, 20, 20, RED)
+    -- draw_text("score: "..score, screen_center.x-40, 20, 20, RED)
 end

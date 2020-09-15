@@ -99,9 +99,9 @@ int main(int argc, const char **argv)
     DrawGrid(10, 1);
 
     // trail/exposion effects
-    create_particle_texture(PARTICLE_TEXTURE_SIZE, SHAPE_CIRCLE, 0);
-    create_particle_texture(PARTICLE_TEXTURE_SIZE, SHAPE_RECT, 1);
-    create_particle_texture(PARTICLE_TEXTURE_SIZE, SHAPE_TRI, 2);
+    // create_particle_texture(PARTICLE_TEXTURE_SIZE, SHAPE_CIRCLE, 0);
+    // create_particle_texture(PARTICLE_TEXTURE_SIZE, SHAPE_RECT, 1);
+    // create_particle_texture(PARTICLE_TEXTURE_SIZE, SHAPE_TRI, 2);
 
     // give game state reference to lua
     XN_GameState game_state = create_XN_GameState(&settings);
@@ -118,7 +118,7 @@ int main(int argc, const char **argv)
     //--------------------------------------------------------------------------------------
 
 #ifdef PROFILING
-    ProfilerStart("XN-Tron-RPI-pass.prof"); // start recording performance
+    ProfilerStart("XNgine-pass.prof"); // start recording performance
 #endif
     // Main game loop
     // --------------------------------------------------------------------------------------

@@ -89,6 +89,7 @@ add_library(xnlib-fn STATIC ${xnlib} )
 # =============================== Build the darn game ====================================
 
 option(Profiling "build with gperftools, record profiling stats")
+set(Profiling FALSE)
 
 macro(XN_Build project_name src_file)
   project( ${project_name} ) 
@@ -97,7 +98,7 @@ macro(XN_Build project_name src_file)
   set(CMAKE_BUILD_TYPE Debug)
 
   if(Profiling)
-    add_definitions( -DPROFILING)
+    add_definitions( -DPROFILING )
     set(prof profiler)
   else()
     set(prof "")

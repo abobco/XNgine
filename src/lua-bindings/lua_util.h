@@ -29,11 +29,6 @@ typedef struct XN_SETTINGS {
 
 #define LUA_SET_SIZE 64
 
-typedef struct PlaneSet {
-    Plane *planes;
-    int count;
-} PlaneSet;
-
 typedef struct OBB {
     Vector3 cen;
     Vector3 axes[3];
@@ -50,6 +45,7 @@ typedef struct MeshSet {
 typedef struct ModelSet {
     Model models[LUA_SET_SIZE];
     MeshSet convexMeshBounds[LUA_SET_SIZE];
+    Vector3 positions[LUA_SET_SIZE];
     // Transform model_transforms[LUA_SET_SIZE];
     int count;
 } ModelSet;
@@ -194,6 +190,9 @@ int lua_DrawCubeWiresV( lua_State *L ); // Draw cube wires (Vector version)
 int lua_DrawCubeV( lua_State *L ); // Draw cube (Vector version) 
 int lua_loadCubeModel( lua_State *L);
 int lua_getBoundingSphere( lua_State *L );
+int lua_setModelPosition( lua_State *L );
+int lua_drawModelBasic( lua_State *L );
+int lua_transformVectorByMatrix( lua_State *L );
 
 // physics
 int lua_rotateVectorByQuaternion( lua_State *L );
@@ -203,6 +202,7 @@ int lua_getConvexMeshBounds( lua_State *L );
 int lua_Slerp( lua_State *L );
 int lua_MatrixTranslate( lua_State *L );
 int lua_setModelTransform( lua_State *L );
+int lua_separatingAxisSphere(lua_State *L);
 
 // define lua host libraries
 static const struct luaL_Reg lua_server_f[] = {
@@ -272,6 +272,7 @@ static const struct luaL_Reg lua_raylib[] = {
 	{ "end_3d_mode", lua_EndMode3D },
 	{ "load_model", lua_loadModel },
 	{ "draw_model", lua_drawModel },
+	{ "draw_model_basic", lua_drawModelBasic },
     { "draw_model_wires", lua_DrawModelWires },
 	{ "unload_model", lua_unloadModel },
 	{ "load_model_mat", lua_LoadModelMat },
@@ -288,13 +289,16 @@ static const struct luaL_Reg lua_raylib[] = {
     { "load_cube_model", lua_loadCubeModel },
     { "vec_rotate_euler", lua_rotateVectorEulers },
     { "vec_rotate_quaternion", lua_rotateVectorByQuaternion },
+    { "vec_transform_model_matrix", lua_transformVectorByMatrix },
     { "euler_to_quaternion", lua_QuaternionFromEuler },
     { "get_halfspace_bounds", lua_getConvexMeshBounds },
     { "quaternion_slerp", lua_Slerp },
     { "model_translate", lua_MatrixTranslate },
     { "model_transform", lua_setModelTransform },
     { "get_bounding_sphere", lua_getBoundingSphere},
-    {0,0}   // terminator 
+    { "model_set_position", lua_setModelPosition},
+    { "separating_axis_sphere", lua_separatingAxisSphere },
+    {0,0}
 };
 
 static const struct luaL_Reg floatArrayLib_f[] = {
@@ -307,7 +311,6 @@ static const struct luaL_Reg floatArrayLib_m[] = {
     {"get", lua_getFloatArray},
     {"size", lua_floatArraySize},
     {"__tostring", lua_floatArrayToString},
-    // {"submit", lua_submitFloatArray},
     {0, 0}
 };
 
