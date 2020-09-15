@@ -115,12 +115,14 @@ int lua_getBoundingSphere( lua_State *L ) {
     AABB box =  get_model_AABB(model);
     
     float radius = 0;
-    if ( radius < fabsf(box.min.x) ) radius = fabsf(box.min.x);
-    if ( radius < fabsf(box.min.y) ) radius = fabsf(box.min.y);
-    if ( radius < fabsf(box.min.z) ) radius = fabsf(box.min.z);
-    if ( radius < fabsf(box.max.x) ) radius = fabsf(box.max.x);
-    if ( radius < fabsf(box.max.y) ) radius = fabsf(box.max.y);
-    if ( radius < fabsf(box.max.z) ) radius = fabsf(box.max.z);
+    float dist_to_verts[] = {
+        Vector3Length(box.min),
+        Vector3Length(box.max)
+    };
+    if ( radius < dist_to_verts[0] ) radius = dist_to_verts[0];
+    if ( radius < dist_to_verts[1] ) radius = dist_to_verts[1];
+
+    get_gamestate()->modelSet.boundingSpheres[id] = radius;
 
     // printf("%f\n", radius);
 
@@ -172,30 +174,30 @@ int lua_separatingAxisSphere(lua_State *L) {
     MeshSet *meshset = &get_gamestate()->modelSet.convexMeshBounds[id];
     Model *model =  &get_gamestate()->modelSet.models[id];
     Vector3 *poly_pos = &get_gamestate()->modelSet.positions[id];
+    float bounding_sphere_radius = get_gamestate()->modelSet.boundingSpheres[id];
 
+    // transform sphere to local space of the polyhedron
+    Vector3 local_sphere = Vector3Subtract(sphere_cen, *poly_pos);
     lua_newtable(L);
+    if ( Vector3LengthSqr(local_sphere) > bounding_sphere_radius*bounding_sphere_radius )
+        return 1;
+
+    
+    Matrix inverse_transform = MatrixInvert(model->transform);
+    local_sphere = Vector3Transform(local_sphere, inverse_transform);
+
     int overlap_count = 0;
     for ( int i =0; i < meshset->mesh_count; i++ ) {
         PlaneSet *bounds = &meshset->meshes[i];
-        Plane transformed_planes[bounds->count];
-        PlaneSet transformed_bounds = { transformed_planes, bounds->count };
-
-        for ( int j = 0; j < bounds->count; j++ ) {
-            transformed_bounds.planes[j] = bounds->planes[j];
-            Plane *plane = &transformed_bounds.planes[j];
-
-            plane->point = Vector3Transform(plane->point, model->transform);
-            plane->point = Vector3Add(plane->point, *poly_pos);
-            plane->normal = Vector3Transform(plane->normal, model->transform);
-
-            // print(j);
-            // print_vec(transformed_bounds.planes[j].point);
-            // print_vec(transformed_bounds.planes[j].normal);
-        }
 
         Plane closest;
         float dist;
-        if ( sep_axis_sphere(&transformed_bounds, &sphere_cen, sphere_rad, &closest, &dist ) ) {
+        if ( sep_axis_sphere( bounds, &local_sphere, sphere_rad, &closest, &dist ) ) {
+            // transform collision data to world space
+            closest.point = Vector3Transform(closest.point, model->transform);
+            closest.point = Vector3Add(closest.point, *poly_pos);
+            closest.normal = Vector3Transform(closest.normal, model->transform);
+
             lua_pushinteger(L, ++overlap_count);
             lua_newtable(L);
 
