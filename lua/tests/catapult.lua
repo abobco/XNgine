@@ -118,19 +118,9 @@ end
 
 -- _draw() is called once every frame update
 function _draw()
-
     -- handle input
-    local msglist = server.pop() 
-    for i=1, msglist:size() do
-        local msg = msglist:get(i)
-        if msg.type == MSG_MOTION_VECTOR then
-            if msg.id == 0 then
-                local scale = 2
-                curr_evt = vec_scale( vec(msg.x, msg.y, msg.z), scale)
-                cam.target_ball = ramp_ball
-            end
-        end
-    end
+    local x, y, z = server.get_motion(0)
+    curr_evt = vec_scale( vec(x, y, z), 2)
 
     cam.target = cam.target_ball.position
 

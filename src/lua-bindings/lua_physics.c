@@ -176,15 +176,16 @@ int lua_separatingAxisSphere(lua_State *L) {
     Vector3 *poly_pos = &get_gamestate()->modelSet.positions[id];
     float bounding_sphere_radius = get_gamestate()->modelSet.boundingSpheres[id];
 
-    // transform sphere to local space of the polyhedron
-    Vector3 local_sphere = Vector3Subtract(sphere_cen, *poly_pos);
-    lua_newtable(L);
-    if ( Vector3LengthSqr(local_sphere) > bounding_sphere_radius*bounding_sphere_radius )
+    lua_newtable(L); // results table
+
+    // early reject if no overlap with the polyhedron's bounding sphere
+    Vector3 local_sphere_cen = Vector3Subtract(sphere_cen, *poly_pos);
+    if ( Vector3LengthSqr(local_sphere_cen) > bounding_sphere_radius*bounding_sphere_radius )
         return 1;
 
-    
+    // finish transforming sphere center to local space of the polyhedron    
     Matrix inverse_transform = MatrixInvert(model->transform);
-    local_sphere = Vector3Transform(local_sphere, inverse_transform);
+    local_sphere_cen = Vector3Transform(local_sphere_cen, inverse_transform);
 
     int overlap_count = 0;
     for ( int i =0; i < meshset->mesh_count; i++ ) {
@@ -192,7 +193,7 @@ int lua_separatingAxisSphere(lua_State *L) {
 
         Plane closest;
         float dist;
-        if ( sep_axis_sphere( bounds, &local_sphere, sphere_rad, &closest, &dist ) ) {
+        if ( sep_axis_sphere( bounds, &local_sphere_cen, sphere_rad, &closest, &dist ) ) {
             // transform collision data to world space
             closest.point = Vector3Transform(closest.point, model->transform);
             closest.point = Vector3Add(closest.point, *poly_pos);
@@ -201,22 +202,22 @@ int lua_separatingAxisSphere(lua_State *L) {
             lua_pushinteger(L, ++overlap_count);
             lua_newtable(L);
 
-                lua_pushstring(L, "d");
-                lua_pushnumber(L, dist);
-                lua_settable(L, -3);
+            lua_pushstring(L, "d");
+            lua_pushnumber(L, dist);
+            lua_settable(L, -3);
 
-                lua_pushstring(L, "s");
-                lua_newtable(L);
+            lua_pushstring(L, "s");
+            lua_newtable(L);
 
-                    lua_pushstring(L, "point");
-                    lua_pushVector3(L, closest.point);
-                    lua_settable(L, -3);
+            lua_pushstring(L, "point");
+            lua_pushVector3(L, closest.point);
+            lua_settable(L, -3);
 
-                    lua_pushstring(L, "normal");
-                    lua_pushVector3(L, closest.normal);
-                    lua_settable(L, -3);
+            lua_pushstring(L, "normal");
+            lua_pushVector3(L, closest.normal);
+            lua_settable(L, -3);
 
-                lua_settable(L, -3);
+            lua_settable(L, -3);
 
             lua_settable(L, -3);
         }

@@ -27,8 +27,6 @@ typedef struct XN_SETTINGS {
     char _WEBSOCKET_DOMAIN[124];
 } XN_SETTINGS;
 
-#define LUA_SET_SIZE 64
-
 typedef struct OBB {
     Vector3 cen;
     Vector3 axes[3];
@@ -42,12 +40,13 @@ typedef struct MeshSet {
     int box_count;
 } MeshSet;
 
+// entity component system 4 dummies
+#define LUA_SET_SIZE 64
 typedef struct ModelSet {
     Model models[LUA_SET_SIZE];
     MeshSet convexMeshBounds[LUA_SET_SIZE];
     Vector3 positions[LUA_SET_SIZE];
     float boundingSpheres[LUA_SET_SIZE];
-    // Transform model_transforms[LUA_SET_SIZE];
     int count;
 } ModelSet;
 

@@ -27,9 +27,10 @@ int lua_getMotionData(lua_State *L) {
     
     lua_pushnumber(L, result.x);
     lua_pushnumber(L, result.y);
+    lua_pushnumber(L, result.z);
 
     // printf("gyro data: ( %f, %f) \n", result.x, result.y);
-    return 2;
+    return 3;
 }
 
 // server fns 

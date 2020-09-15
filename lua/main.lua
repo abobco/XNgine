@@ -122,24 +122,15 @@ end
 -- _draw() is called once every frame update
 correction_ang = 0
 function _draw()
-    -- handle input
-    local msglist = server.pop() 
-    for i=1, msglist:size() do
-        local msg = msglist:get(i)
-        if msg.type == MSG_MOTION_VECTOR then
-            if msg.id == 0 then
-                local scale = 2
-                -- filthy attempt to correct flipping in gimbal lock situations
-                -- if abs(curr_evt.z+msg.z*2) < 0.1 and abs(curr_evt.y -msg.y*2) > pi/4 then 
-                --     correction_ang += pi 
-                    -- msg.z*=-1
-                    -- msg.y += pi
-                -- end
-                curr_evt = vec_scale( vec(msg.x, msg.y, msg.z), scale)
-                -- if  abs(curr_evt.y) > pi/2 then curr_evt.y +=pi curr_evt.z+=pi end
-            end
-        end
-    end
+    local x, y, z = server.get_motion(0)
+    -- filthy attempt to correct flipping in gimbal lock situations
+    -- if abs(curr_evt.z+z*2) < 0.1 and abs(curr_evt.y -y*2) > pi/4 then 
+    --     correction_ang += pi 
+    --     z*=-1
+    --     y += pi
+    -- end
+    curr_evt = vec_scale( vec(x, y, z), 2)
+    
 
     -- draw scene
     cam.target = ball.position
