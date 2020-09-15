@@ -12,7 +12,7 @@ extern "C" {
 // #include "../snake.h"
 // #include "../lua-bindings/lua_util.h"
 
-#define EPSILON 1e-4    // I should probably be getting this value from the compiler but lazy
+#define EPSILON 1e-6f    // I should probably be getting this value from the compiler but lazy
 
 #define print_vec(a) printf("%s = (%f, %f, %f)\n", #a, a.x, a.y, a.z );
 
