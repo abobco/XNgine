@@ -66,6 +66,9 @@ load_animations( model, filepath )  -- load animations from a .iqm file into a m
 update_model_animation( model, anim_num, frame_num ) -- set model pose
 get_animation_frame_count( model, anim_num ) -- get # of frames in an animation
 model_rotate_euler( model, x, y, z ) -- set model rotation
+draw_model(model, position, rotation_axis, rotation_angle, scale, tint )
+draw_model_basic( model, position, tint )
+
 
 -- smooth random number generation
 perlin2d( x, y, freq, depth ) 
@@ -102,7 +105,21 @@ function _fixedUpdate() -- gets called at 60 hz
         end     
     end
 end
-```              
+```    
+* `server.get_motion(i)` - cheap, easier way to get the most recent motion value for player i        
+
+## physics 
+
+```lua 
+euler_to_quaternion(eulerAngles) --> quaternion { x, y, z, w }
+vec_transform_model_matrix(model, vector) --> vector {x, y, z} transformed by model's transformation matrix
+get_bounding_sphere(model) --> radius of the sphere bounding all possible rotations of model
+get_halfspace_bounds(model) --> table containing a table of bounding planes { point, normal } for each convex mesh in model
+
+model_set_position(model, position) -- submit model world coordinates to collision system
+separating_axis_sphere(model, sphere_center, sphere_radius ) --> table containing tables of collision results { d, s = { point, normal } } between the sphere and all loaded models
+
+```
 
 ## particles:
 * `particle_system.new( color, max_speed, acceleration, max_scale, scale_rate )`

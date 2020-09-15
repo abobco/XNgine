@@ -1,3 +1,5 @@
+-- 3D physics prototypes
+
 Plane = {
     point=vec(0,0,0),
     normal=vec(0,1,0)
@@ -195,8 +197,9 @@ function Hash:print_contents()
     end
 end
 
-function vec_rej(a,b)
-    -- local nb = vec_norm(b)
+-- 3D math helpers
+
+function vec_rej( a, b ) -- b should be normalized
     local proj = vec_scale(b, vec_dot(a, b))
     return vec_sub(a, proj)
 end
@@ -206,13 +209,13 @@ function halfspace_distance( plane, norm, point )
     return vec_dot(norm, d)
 end
 
-function point_in_aabb(point, box)
+function point_in_aabb( point, box )
     return (point.x >= box.minX and point.x <= box.maxX) and
            (point.y >= box.minY and point.y <= box.maxY) and
            (point.z >= box.minZ and point.z <= box.maxZ);
 end
 
-function dist_sqr_point_aabb(point, aabb)
+function dist_sqr_point_aabb( point, aabb )
     local sqr_dist = 0
     for k, v in pairs(point) do
         if v < aabb.min[k] then sqr_dist = (aabb.min[k] - v)*(aabb.min[k] - v) end
@@ -221,7 +224,9 @@ function dist_sqr_point_aabb(point, aabb)
     return sqr_dist
 end
 
-function sep_axis(sides, sphere) 
+-- a faster, model-wide version of this test is also available from the host function,
+--      separating_axis_sphere( model, sphere_center, sphere_radius )
+function sep_axis( sides, sphere ) 
     local closest_d = math.mininteger
     local closest_side = {}
     for k, side in pairs(sides) do
@@ -240,18 +245,21 @@ function sep_axis(sides, sphere)
     return {d=closest_d, s=closest_side}
 end
 
-function ball_collisions(ball, hash, angular_vel_scale)
+-- collision/rigidbody update
+function ball_collisions( ball, hash, angular_vel_scale )
     angular_vel_scale = angular_vel_scale or 0.15 
-    local bodies = {}
-    -- for k, v in pairs(obstacles) do
+
     for k, v in pairs(hash:get_meshes(ball.position)) do
         local results = separating_axis_sphere(v.model, ball.position, ball.radius)
         for mk, mv in pairs(results) do
-            active_object = v
+            ball.active_object = v  -- set motion control object
+
+            -- translate ball
             local plane_to_sphere = vec_scale(mv.s.normal, mv.d)
             ball.position = vec_sub(ball.position, plane_to_sphere)
+            
+            -- apply angular velocity to ball
             if v.prev_eulers and v.bounciness == 0 then
-                -- apply angular velocity
                 local collision_center = vec_sub(ball.position, plane_to_sphere )
                 local radius = vec_len(vec_sub(collision_center, v.position))
                 local angular_vel = vec_sub(v.eulers, v.prev_eulers)
@@ -259,6 +267,7 @@ function ball_collisions(ball, hash, angular_vel_scale)
                 ball.vel = vec_add(ball.vel, linear_vel)
             end
             
+            -- project velocity onto collision surface
             local dot = vec_dot(ball.vel, mv.s.normal)
             if dot < 0 then
                 local proj = vec_scale(mv.s.normal, dot)

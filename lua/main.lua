@@ -31,10 +31,9 @@ end
 ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, ORANGE)
 ball.vel = vec(0,0,0)
 ball.max_spd = 1
+ball.active_object = obstacles[1]
 
 visible_objects = { ball }
-active_object = obstacles[1]
-
 for k, v in pairs(obstacles) do
     visible_objects[#visible_objects+1] = v
 end
@@ -103,7 +102,7 @@ function _fixedUpdate()
         if spinner_k then 
             v.target_eulers.z = v.target_eulers.z + 0.01*spinner_k 
             v.eulers = vec_lerp(v.eulers, vec_add(v.target_eulers, vec(0, correction_ang, 0)), 0.1) 
-        elseif v.model == active_object.model then
+        elseif v.model == ball.active_object.model then
             v.prev_eulers = vec_copy(v.eulers)
             v.eulers = vec_lerp(v.eulers, vec_add(v.target_eulers, vec(curr_evt.y,  correction_ang,  curr_evt.z)), 0.1)
         elseif v.bounciness > 0 then
