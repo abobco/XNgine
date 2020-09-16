@@ -123,3 +123,8 @@ int lua_LoadModelFromMesh( lua_State *L ) {
     LoadModelFromMesh();
     return 0;
 } 
+// Takes a screenshot of current screen (saved a .png) 
+int lua_TakeScreenshot( lua_State *L ) {
+    TakeScreenshot();
+    return 0;
+} 

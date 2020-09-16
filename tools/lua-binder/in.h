@@ -23,3 +23,4 @@ void DrawModelWires(Model model, Vector3 position, float scale, Color tint);    
 Vector3 collision_AABB_sphere( Transform box, Vector3 cen, float r );                              // returns a displacement vector for the collision in world space
 Mesh GenMeshCube(float width, float height, float length);                                         // Generate cuboid mesh
 Model LoadModelFromMesh(Mesh mesh);                                                                // Load model from generated mesh (default material)
+void TakeScreenshot(const char *fileName);                              // Takes a screenshot of current screen (saved a .png)

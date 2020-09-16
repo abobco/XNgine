@@ -815,6 +815,14 @@ int lua_loadCubeModel( lua_State *L) {
     return 1;
 }
 
+// Takes a screenshot of current screen (saved a .png) 
+int lua_TakeScreenshot( lua_State *L ) {
+    const char *filename = luaL_checkstring(L, 1);
+    printf("%s\n", filename);
+    TakeScreenshot(filename);
+    return 0;
+} 
+
 
 // --------------------------------- audio ------------------------------------
 

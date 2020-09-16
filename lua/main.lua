@@ -7,28 +7,28 @@ curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
 
 obstacles = {
-    MeshSet:new(vec(  0,  8,  0), load_model("../models/bumper_paddle_f.iqm"), BEIGE),
-    MeshSet:new(vec(  0, 10,-30), load_model("../models/bumper_paddle_l.iqm"), BEIGE),
-    MeshSet:new(vec(-30, 20,-30), load_model("../models/bumper_paddle_r.iqm"), BEIGE),
-    MeshSet:new(vec(  0, 30,-30), load_model("../models/bumper_paddle_fb.iqm"), BEIGE),
-    MeshSet:new(vec(  0, 35,-60), load_model("../models/bigpaddle.iqm"), BEIGE),
-    MeshSet:new(vec(  0, 34,-89), load_model("../models/2x3x20.iqm"), BEIGE),
-    MeshSet:new(vec(  0, 40,-140), load_model("../models/bigpaddle.iqm"), BEIGE),
+    MeshSet:new(vec(  0,  8,  0), load_model("../models/bumper_paddle_f.iqm"), BROWN),
+    MeshSet:new(vec(  0, 10,-30), load_model("../models/bumper_paddle_l.iqm"), BROWN),
+    MeshSet:new(vec(-30, 20,-30), load_model("../models/bumper_paddle_r.iqm"), BROWN),
+    MeshSet:new(vec(  0, 30,-30), load_model("../models/bumper_paddle_fb.iqm"), BROWN),
+    MeshSet:new(vec(  0, 35,-60), load_model("../models/bigpaddle.iqm"), BROWN),
+    MeshSet:new(vec(  0, 34,-89), load_model("../models/2x3x20.iqm"), BROWN),
+    MeshSet:new(vec(  0, 40,-140), load_model("../models/bigpaddle.iqm"), BROWN),
     
-    -- MeshSet:new(vec(-30,  8,-10), load_model("../models/tower.iqm"), BEIGE)
+    -- MeshSet:new(vec(-30,  8,-10), load_model("../models/tower.iqm"), BROWN)
 }
 
 spinners =  {
-    -- MeshSet:new(vec(  0, 60, -65), load_model("../models/3x2x20.iqm"), BEIGE),
-    MeshSet:new(vec(  0, 58, -80), load_model("../models/3x2x20.iqm"), BEIGE),
-    MeshSet:new(vec(  0, 58,-105), load_model("../models/3x2x20.iqm"), BEIGE)
+    -- MeshSet:new(vec(  0, 60, -65), load_model("../models/3x2x20.iqm"), BROWN),
+    MeshSet:new(vec(  0, 58, -80), load_model("../models/3x2x20.iqm"), BROWN),
+    MeshSet:new(vec(  0, 58,-105), load_model("../models/3x2x20.iqm"), BROWN)
 }
 for k, v in pairs(spinners) do
     obstacles[#obstacles+1] = v
     v.target_eulers = vec(0,0,0)
 end
 
-ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, ORANGE)
+ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, MAROON)
 ball.vel = vec(0,0,0)
 ball.max_spd = 1
 ball.active_object = obstacles[1]

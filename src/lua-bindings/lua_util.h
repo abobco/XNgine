@@ -166,6 +166,7 @@ int lua_setShaderUniform( lua_State *L );
 int lua_getShaderUniformLoc( lua_State *L);
 int lua_DrawFPS( lua_State *L ); // Shows current FPS 
 int lua_loadAudioStream(lua_State *L);
+int lua_TakeScreenshot( lua_State *L ); // Takes a screenshot of current screen (saved a .png) 
 
 // 3d
 Vector3 lua_getVector3Field( lua_State *L, const char *key, int table_stack_idx);
@@ -266,6 +267,7 @@ static const struct luaL_Reg lua_raylib[] = {
     { "draw_fps", lua_DrawFPS },
     { "load_audiostream", lua_loadAudioStream },
     { "perlin2d", lua_getPerlinNoise},
+    { "take_screenshot", lua_TakeScreenshot },
     
     { "set_camera_mode", lua_SetCameraMode },
     { "begin_3d_mode", lua_BeginMode3D },
