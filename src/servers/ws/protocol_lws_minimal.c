@@ -1,16 +1,12 @@
 /*
  * ws protocol handler plugin for "lws-minimal"
- *
- * Written in 2010-2019 by Andy Green <andy@warmcat.com>
- *
- * This file is made available under the Creative Commons CC0 1.0
- * Universal Public Domain Dedication.
- *
- * This version uses an lws_ring ringbuffer to cache up to 8 messages at a time,
- * so it's not so easy to lose messages.
- *
- * This also demonstrates how to "cull", ie, kill, connections that can't
- * keep up for some reason.
+ * 
+ * Adapted from an 8-message ringbuffer example originally written by the author of libwebsockets, Andy Green (andy@warmcat.com).
+ * Additional functionality added by me (Austin Bobco):
+ * 		- Insert messages into a global message queue, together w/ Bluetooth gamepad events
+ * 		- Message exchange where the server sends a player id to newly connected clients
+ * 		- Message types
+ * 
  */
 #include <time.h>
 
@@ -48,10 +44,7 @@ int ws_recv_motion_event(int32_t* packet) {
 		motion_msg[player],      // motion data    (optional)
 		// NULL            			// string message (optional)
 	};
-	
-	// lwsl_user("S, R, %llu\n", ms_since_epoch() ); 
 	enq_msg(msg_to_queue); 
-	// lwsl_user("Player: %d (%f,%f)\n", player, ((float)ret[1])*INT_TO_FLOAT_CONV_FACTOR, ((float)ret[2])*INT_TO_FLOAT_CONV_FACTOR );
 
 	return 0;
 }
@@ -142,7 +135,6 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 					lws_get_protocol(wsi));
 					
 	const struct msg *pmsg;		// outgoing message
-	// struct msg amsg;			// incoming message
 	int n, m;
 
 	switch (reason) {
@@ -253,7 +245,6 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 			// lwsl_user("LWS_CALLBACK_RECEIVE: free space %d\n", n);
 
 			// read the message 
-			//ws_recv_motion_event(amsg, in, len);
 			ws_recv_msg(in, len);
 			break;
 	// ------------------------------------------------------------------------------------------------------------
