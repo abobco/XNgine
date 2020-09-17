@@ -12,7 +12,7 @@ LOG_NONE    = 7
 
 ------------------ main settings ----------------------------
 XN_SETTINGS={ 
-    LOG_LEVEL              = LOG_WARNING,
+    LOG_LEVEL              = LOG_ERROR,
 
     SCREEN_WIDTH           = 720,
     SCREEN_HEIGHT          = 480,
