@@ -29,8 +29,8 @@ ramp_ball = Sphere:new(vec_add(spawn_pos, vec(0,0, -15)), 0.5, RED)
 balls = { catapult_ball, ramp_ball }
 
 -- curved ramp obstacle
-local ramp_offset =  vec(4.5, -5, 0)
-halfsphere_ramp =  {
+local ramp_offset =  vec(4.3, -10, 0)
+halfsphere_ramp = {
     mesh = MeshSet:new( vec_add(ramp_ball.position, ramp_offset), load_model("../models/halfsphere.iqm")),
     collider = SphereContainer:new( vec_add(ramp_ball.position, ramp_offset), 4.8 )
 }
@@ -56,16 +56,16 @@ end
 
 cam = Camera:new( vec_add(catapult_ball.position, vec(0, 32, 32)),     -- position
                   catapult_ball.position,                              -- target
-                  vec(0, 1, 0) )                              -- camera up
+                  vec(0, 1, 0) )                                       -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
-cam.target_ball = catapult_ball
+cam.target_ball = ramp_ball
 cam.orbit_radius = 32
 
 function cam:set_orbit( radius, angle)
     angle = angle or pi/2
     cam.position = vec_lerp( 
         cam.position, 
-        vec_add( cam.target_ball.position, vec(cos(angle)*radius, 2*radius/3, sin(angle)*radius)), 
+        vec_add( cam.target_ball.position, vec(cos(angle)*radius, 2*radius, sin(angle)*radius)), 
         0.05
     )
 end

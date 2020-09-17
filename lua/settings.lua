@@ -11,7 +11,7 @@ LOG_FATAL   = 6
 LOG_NONE    = 7
 
 ------------------ main settings ----------------------------
-XN_SETTINGS={ 
+XN_SETTINGS = { 
     LOG_LEVEL              = LOG_ERROR,
 
     SCREEN_WIDTH           = 720,
@@ -20,7 +20,6 @@ XN_SETTINGS={
     WEBSOCKET_DOMAIN       = "www.studiostudios.net",
     WEBSOCKET_PORT         = 3000
 }
-
 -------------------------------------------------------------
 
 USER_WEBSOCKET = 0

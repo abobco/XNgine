@@ -93,24 +93,19 @@ function SphereContainer:sphere_collision(sphere, model)
              -- direction from ramp center to sphere before and after the physics update
             local d1 = vec_sub(sphere.prev_position, self.position)
             local d2 = vec_scale(vec_norm(d), self.radius - sphere.radius)
-           
-            -- rotate linear velocity 
-            local q = vec_cross(d1, d2)
-            q.w = sqrt( vec_len_sqr(d1) * vec_len_sqr(d2) ) + vec_dot(d1, d2)
-            q = vec_norm(q)
             
             sphere.position = vec_add( self.position, d2 )
-            sphere.vel = vec_rotate_quaternion(sphere.vel, q)
-
-            local ls = vec_len_sqr(sphere.vel)
-            local max_spd = 0.5
-            if ls > max_spd*max_spd then 
-                sphere.vel = vec_scale( vec_norm(sphere.vel), max_spd )
+            -- sphere.vel = vec_rotate_quaternion(sphere.vel, q)
+            local surf_norm = vec_sub(self.position, sphere.position)
+            if vec_dot(sphere.vel, surf_norm) < 0 then 
+                sphere.vel = vec_scale( vec_norm(vec_rej( sphere.vel, vec_norm(surf_norm) )), vec_len(sphere.vel))
             end
+   
         end
     elseif sphere.control_object == self then
-        local spd = vec_len(sphere.vel)
-        sphere.vel = vec_scale( vec_norm(vec_sub(sphere.vel, vec_rej(sphere.vel, self.top.normal))), spd)
+        -- project sphere velocity onto container top normal when leaving ramp
+        local dot = vec_dot(sphere.vel, self.top.normal)
+        sphere.vel = vec_scale( self.top.normal, dot ) 
         sphere.control_object = nil
     end
     sphere.prev_position = vec_copy(sphere.position)
