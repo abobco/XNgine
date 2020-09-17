@@ -204,6 +204,7 @@ int lua_Slerp( lua_State *L );
 int lua_MatrixTranslate( lua_State *L );
 int lua_setModelTransform( lua_State *L );
 int lua_separatingAxisSphere(lua_State *L);
+void mesh_load_physics_data(ModelSet *m);
 
 // define lua host libraries
 static const struct luaL_Reg lua_server_f[] = {
