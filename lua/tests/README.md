@@ -108,7 +108,7 @@ function _fixedUpdate() -- gets called at 60 hz
     end
 end
 ```    
-* `server.get_motion(i)` - cheap, easier way to get the most recent motion value for player i        
+* `server.get_motion(i)` - cheap, easier way to get the most recent motion or joystick value for player i        
 
 ## physics 
 When a model is successfully loaded with `load_model()`, each of its meshes is checked for convexity. All convex meshes are stored internally as sets of planes(halfspaces), which can be used for separating axis collision tests. See [util/physics.lua](../util/physics.lua) for an implementation where stationary, rotating models act on sphere bodies.
@@ -122,7 +122,7 @@ get_halfspace_bounds(model) --> table containing a table of bounding planes { po
 model_set_position(model, position) -- submit model world coordinates to collision system
 separating_axis_sphere(model, sphere_center, sphere_radius ) --> table containing tables of collision results: 
                                                              --     { d = signed_distance, s = { point, normal } } 
-                                                             -- between the sphere and all loaded models
+                                                             -- between the sphere and all convex meshes in model
 
 ```
 

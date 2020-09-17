@@ -33,7 +33,7 @@ int convex_poly_circle_collision(Vector2 *a, int a_n, Vector2 b_cen, float radiu
 float perlin2d(float x, float y, float freq, int depth);
 
 inline float rand_float() {
-    return (float)rand() / (float)(RAND_MAX);
+    return rand() / (float)(RAND_MAX);
 }
 
 inline float lerp(float a, float b, float t) {
@@ -85,20 +85,15 @@ inline int sep_axis_sphere(PlaneSet *bounds, Vector3 *sphere_cen, float sphere_r
         float d = Vector3DotProduct(plane->normal, separation);
         
         if ( d > 0 ) {
-            // printf("%d\n", 0);
             return 0;
         }
             
-
         if ( d > closest_d ) {
             closest_d = d;
             closest->normal = plane->normal;
             closest->point = plane->point;
-            // printf("%f %f %f \n", closest->normal.x, closest->normal.y, closest->normal.z );
         }
     }
-
-    // printf("%d\n", 1);
     *dist = closest_d;
     return 1;
 }

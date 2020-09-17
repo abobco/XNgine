@@ -128,9 +128,6 @@ function bezier1d(x1, x2, x3, x4, t)
     return x1*(1-t)^3 + 3*x2*t*(1-t)^2 + 3*x3*(t^2)*(1-t) + x4*t^3
 end
 
--- this is a pretty expensive function that's usually used on a relatively small & 
--- discrete domain (0, 1/60, ... 59/60, 1), so might be worthwhile to pre-calculate
--- the output & save it to a lookup table
 function bezierY(t)
     return bezier1d( 0.0, 0.0, 1.0, 1.0, t ) 
 end

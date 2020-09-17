@@ -61,12 +61,12 @@ function _draw()
     draw_cube_wires( vec(-5, 0, -5 ), vec(1,1,1), GREEN )
     draw_cube_texture( cube_tex, vec( -5, 0, 5), vec(1,1,1), WHITE )
 
-    draw_model( xab,
-                vec(0, 2, 0 ),  
-                vec(1, 0, 0),    
-                -90,
-                vec(0.239222, 0.239222, 0.239222), 
-                WHITE )
+    draw_model( xab,                                    -- model
+                vec(0, 2, 0 ),                          -- position
+                vec(1, 0, 0),                           -- rotation axis
+                -90,                                    -- rotation angle
+                vec(0.239222, 0.239222, 0.239222),      -- scale
+                WHITE )                                 -- tint
     
     end_3d_mode()
 

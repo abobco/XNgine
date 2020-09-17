@@ -5,8 +5,10 @@ xabnab = load_texture("xabnab.png")
 total_xabs = 100
 
 -- create render-texture matching the screen dims
-layer = load_render_texture( XN_SETTINGS.SCREEN_WIDTH, XN_SETTINGS.SCREEN_HEIGHT )
-filter = load_shader(nil, "../shaders/glsl100/swirl.fs")
+layer = load_render_texture( screen.x, screen.y ) 
+filter = load_shader(nil, "../shaders/swirl.fs")
+
+set_uniform( filter, get_uniform_loc(filter, "resolution"), screen, UNIFORM_VEC2 ) 
 
 -- vec2 uniform we will set for the shader to make the swirl follow a cursor
 swirl_unif = get_uniform_loc(filter, "center")
@@ -21,10 +23,12 @@ end
 
 -- _draw() is called once every frame update
 function _draw()
-    
-    set_uniform( -- send updated cursor position to the gpu
-        filter, swirl_unif, 
-        vec(cursor.x, XN_SETTINGS.SCREEN_HEIGHT - cursor.y), -- flip y axis for opengl
+    -- move swirl center with the cursor
+    cursor = get_cursor_pos(0)
+    set_uniform(
+        filter, 
+        swirl_unif, 
+        vec(cursor.x, screen.y - cursor.y), -- flip y axis for opengl
         UNIFORM_VEC2 
     )
 
@@ -34,12 +38,12 @@ function _draw()
         time = get_time()
 
         -- change texture tint with time
-        local tint = { 
-            r=abs(255*sin(time)),
-            g=abs(255*cos(time)), 
-            b=abs(255*(0.5*sin(time) + 0.5*cos(time))), 
-            a=255
-        }
+        local tint = color(
+            abs(255*sin(time)),
+            abs(255*cos(time)), 
+            abs(255*(0.5*sin(time) + 0.5*cos(time))),
+            255
+        )
 
         -- draw xabnab textures
         draw_texture(xabnab, 600, 150, tint)
@@ -66,11 +70,12 @@ function _draw()
         fill_circle(circle_pos.x, 400, 25, PINK)
     end_texture_mode()
 
+    -- apply post-processing shader
     begin_shader_mode( filter )       
-        draw_texture(layer, 0, 0)   -- apply shader & draw the render-texture 
+        draw_texture(layer, 0, 0) 
     end_shader_mode()
 
-    -- hash tag nofilter
+    -- draw stuff not affected by filter
     fill_circle(cursor.x, cursor.y, 4, RED) 
     draw_fps(XN_SETTINGS.SCREEN_WIDTH - 100, 20)
 end

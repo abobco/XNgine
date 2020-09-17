@@ -5,10 +5,11 @@ total_xabs = 100
 
 -- create render-texture matching the screen dims
 layer = load_render_texture( XN_SETTINGS.SCREEN_WIDTH, XN_SETTINGS.SCREEN_HEIGHT )
-filter = load_shader(nil, "../shaders/glsl100/swirl.fs")
+filter = load_shader(nil, "../shaders/swirl.fs")
+
+set_uniform( filter, get_uniform_loc(filter, "resolution"), screen, UNIFORM_VEC2 ) 
 
 swirl_unif = get_uniform_loc(filter, "center")
-print(swirl_unif)
 cursor = vec(screen_center.x, screen_center.y)
 
 time = 0
@@ -26,23 +27,26 @@ while ( true ) do
         time += interval
         lag -= interval
     end
-    
-    set_uniform( 
-        filter, swirl_unif, 
-        {x = cursor.x, y=XN_SETTINGS.SCREEN_HEIGHT-cursor.y }, -- flip y axis for opengl
-        UNIFORM_VEC2 )
 
-    begin_drawing()
+    cursor = get_cursor_pos(0)
+    set_uniform( 
+        filter, 
+        swirl_unif, 
+        vec(cursor.x, screen.y-cursor.y), -- flip y axis for opengl
+        UNIFORM_VEC2
+    )
+
+    begin_drawing() -- required when drawing stuff outside of _draw()
         cls() -- clear screen
         -- draw stuff to render-texture
         begin_texture_mode(layer)
             cls()
-            local tint = { 
-                r=abs(255*sin(time)),
-                g=abs(255*cos(time)), 
-                b=abs(255*(0.5*sin(time) + 0.5*cos(time))), 
-                a=255
-            }
+            local tint = color(
+                abs(255*sin(time)),
+                abs(255*cos(time)), 
+                abs(255*(0.5*sin(time) + 0.5*cos(time))), 
+                255
+            )
             draw_texture(xabnab, 600, 150, tint)
             local r = 150*sin(time)
             for a=0, 2*pi, 2*pi/total_xabs do 
@@ -50,8 +54,7 @@ while ( true ) do
                 local y = screen_center.y + r*sin(a+time) - xabnab.height/2
                 draw_texture(xabnab, x, y, tint)
             end
-            
-            -- api sample code
+  
             local t_str = string.format("%.2f", get_time())
             draw_text(t_str, 25, 80, 20, RED)
             draw_text("above text is "..measure_text(t_str, 20).." pixels wide", 25, 100, 20, BLUE)
@@ -67,12 +70,11 @@ while ( true ) do
         end_texture_mode()
 
         begin_shader_mode( filter )       
-            draw_texture(layer, 0, 0)   -- apply shader & draw the render-texture 
+            draw_texture(layer, 0, 0)   -- apply shader & draw the render-texture
         end_shader_mode()
 
-        -- #nofilter
         fill_circle(cursor.x, cursor.y, 4, RED) 
         draw_fps(XN_SETTINGS.SCREEN_WIDTH - 100, 20)
 
-    end_drawing()
+    end_drawing() -- required when drawing stuff outside of _draw()
 end

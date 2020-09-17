@@ -10,7 +10,7 @@ varying vec4 fragColor;
 uniform sampler2D texture0;
 uniform vec4 colDiffuse;
 
-uniform vec2 res; // = vec2(720, 480);
+uniform vec2 res;
 
 float radius = 100.0;
 float angle = 0.8;
@@ -41,8 +41,8 @@ float round_merge(float shape1, float shape2, float radius)
 }
 
 float circleSDF(vec2 point, float radius, vec2 texCoord){
-	float line_resolition = 0.005;	// controls density of the field lines
-	float scaled_radius = line_resolition*radius;// scale down the radius to fit the resolution
+	float line_resolition = 0.005;	// field line density
+	float scaled_radius = line_resolition*radius; // scale down the radius to fit the resolution
 
 	vec2 conv_factor = res.xy*line_resolition;
 	vec2 position = (texCoord - point)*conv_factor;
@@ -74,17 +74,6 @@ void main()
   tc += cursor;
   tc /= res;
 
-  // float n1 = snoise(vec2(time, 0))*0.1;
-  // float n2 = snoise(vec2(0, time))*0.1;
-
-
-
-  // signed distance fields
-  // vec2 p1 = vec2(0.58 + n2, 0.5 + n1);
-  // vec2 p2 = vec2(0.43 + n1, 0.5 + n2);
-
-
-  
 	float d1 = circleSDF(dot1/res, dot_radius, tc);
 	float d2 = circleSDF(dot2/res, dot_radius, tc);
 	float d3 = circleSDF(dot3/res, dot_radius, tc);

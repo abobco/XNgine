@@ -10,6 +10,7 @@ ParticleInfo create_particle(Vector2 position, float mag, float scale) {
         (-1.0f + 2.0f*rand_float() )*mag,
         (-1.0f + 2.0f*rand_float() )*mag
     };
+    // printf("%f, %f\n", particle.velocity.x, particle.velocity.y );
     particle.scale = scale;
 
     return particle;
@@ -58,14 +59,14 @@ void update_particles(EmitterInfo *emitter, int n ) {
 
     // update particle positions
     for ( int i = 0; i < emitter->num_particles; i++ ) {
-        ParticleInfo* p = &(emitter->particles[i]);
+        ParticleInfo* p = &emitter->particles[i];
 
         p->position = Vector2Add(p->position, p->velocity);
 
         p->velocity = Vector2Lerp( (Vector2) {0,0}, p->velocity, emitter->d_speed);
 
         if ( p->scale > 0.2f )
-            p->scale = lerp(0.0f, p->scale,  emitter->d_scale);
+            p->scale = lerp( p->scale,  0.0f, emitter->d_scale);
         else 
             p->scale = 0.0f; 
     }

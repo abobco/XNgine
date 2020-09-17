@@ -104,8 +104,7 @@ function _fixedUpdate()
     -- rotate catapult_arm
     catapult_arm.time_shot += 1
     if catapult_arm.time_shot > catapult_arm.reset_time then 
-        local rest = catapult_arm.rest_eulers
-        catapult_arm.target_eulers = vec(rest.x, rest.y, rest.z)
+        catapult_arm.target_eulers = vec_copy(catapult_arm.rest_eulers)
     end
     catapult_arm.prev_eulers = vec(catapult_arm.eulers.x, catapult_arm.eulers.y, catapult_arm.eulers.z)
     catapult_arm.eulers = vec_lerp(catapult_arm.eulers, catapult_arm.target_eulers, 0.03)

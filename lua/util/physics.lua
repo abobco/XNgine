@@ -84,8 +84,6 @@ function SphereContainer:new(pos, radius, color)
 end
 
 function SphereContainer:sphere_collision(sphere, model)
-    -- TODO: replace this conditional w/ quad collision test for the top of the box container
-    -- if sphere.position.y < self.position.y + 0.2 then 
     local orig_n = vec_copy(self.top.normal)
     self.top.normal = vec_transform_model_matrix( model, self.top.normal )
     if sep_axis({ self.top }, sphere) then 

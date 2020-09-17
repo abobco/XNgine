@@ -19,7 +19,6 @@ obstacles = {
 }
 
 spinners =  {
-    -- MeshSet:new(vec(  0, 60, -65), load_model("../models/3x2x20.iqm"), BROWN),
     MeshSet:new(vec(  0, 58, -80), load_model("../models/3x2x20.iqm"), BROWN),
     MeshSet:new(vec(  0, 58,-105), load_model("../models/3x2x20.iqm"), BROWN)
 }
@@ -37,16 +36,6 @@ visible_objects = { ball }
 for k, v in pairs(obstacles) do
     visible_objects[#visible_objects+1] = v
 end
-
--- bouncey_bois = {}
--- for i = 0, 3 do
---     bouncey_bois[#bouncey_bois+1] = MeshSet:new( vec( -i*16, 8, -60),  load_model("../models/bigpaddle.iqm"), RED )
--- end 
-
--- for k, v in pairs(bouncey_bois) do
---     obstacles[#obstacles+1] = v
---     v.bounciness = 0.5
--- end
 
 -- spacial hash grid
 hash = Hash:new(16)

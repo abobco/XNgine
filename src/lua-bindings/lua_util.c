@@ -6,7 +6,6 @@
 
 static XN_GameState* game_state;
 static XN_SETTINGS *game_settings;
-// --------------------------------------------------------------------------------------
 
 XN_GameState *get_gamestate() { return game_state; }
 XN_SETTINGS *get_settings() { return game_settings; }
@@ -65,7 +64,7 @@ int lua_checkOOB(lua_State *L, int i, int n) {
     return 0;
 }
 
-// general lua getter
+// general lua getters
 lua_Number lua_getNumberFromTable( lua_State *L, int index, int table_stack_index ) {
     lua_pushnumber(L, index);
     lua_gettable(L, table_stack_index);

@@ -1,6 +1,7 @@
 -- 2d sdf, swirl post processing shader 
 
 dofile("../lua/util/ui.lua")
+
 -- create render-texture matching the screen dims
 fb = load_render_texture( screen.x, screen.y )
 filter = load_shader(nil, "../shaders/sdf.fs") -- load shader
@@ -37,7 +38,7 @@ end
 
 -- _draw() is called once every frame update
 function _draw()
-
+    cursor = get_cursor_pos(0)
     set_uniform( -- send updated cursor position to the gpu
         filter, swirl_unif, 
         vec(cursor.x, screen.y - cursor.y ), -- flip y axis for opengl

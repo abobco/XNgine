@@ -30,7 +30,6 @@
 int ws_recv_motion_event(int32_t* packet) {
 	// convert to game data
 	int32_t player = packet[1]-1;
-	// lwsl_user("%d\n", player);
 	motion_msg[player].x = ((float)packet[2])*INT_TO_FLOAT_CONV_FACTOR;
 	motion_msg[player].y = ((float)packet[3])*INT_TO_FLOAT_CONV_FACTOR;
 	motion_msg[player].z = ((float)packet[4])*INT_TO_FLOAT_CONV_FACTOR;
@@ -50,7 +49,7 @@ int ws_recv_motion_event(int32_t* packet) {
 }
 
 // read the message type, pass it to the appropriate handler
-int ws_recv_msg(void* input, size_t len) {
+int ws_recv_msg(void *input, size_t len) {
 	struct msg amsg;
 	// over-allocate the message to make room for websocket headers
 	amsg.payload = malloc(LWS_PRE + len);
@@ -84,7 +83,7 @@ int ws_recv_msg(void* input, size_t len) {
 		// b/c this language was made for cyborgs. We can get around this by wrapping the entire
 		// block in these dumbass braces
 		{
-			// new message to add to the queue
+			// virtual button press event
 			struct Message msg_to_queue = {         
 				(enum MSG_TYPE) type,  			// message type
 				0.0f,						// timestamp
