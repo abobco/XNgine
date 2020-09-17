@@ -213,9 +213,7 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 				// NULL            			// string message (optional)
 			};
 				
-			pthread_mutex_lock(&binary_sem); // lock the shared resource      
-			enq(message_queue, msg_to_queue); // add the message to the queue to the queue
-			pthread_mutex_unlock(&binary_sem); // release to other threads
+			enq_msg(msg_to_queue);
 			
 			break;
 		}

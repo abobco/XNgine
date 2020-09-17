@@ -24,7 +24,7 @@ draw_rect( x, y, w, h, color, line_width)
 
 fill_circle( x, y, r, color )
 draw_circle( x, y, r, color, line_width, num_segments )
-fill_circle_sector( x, y, r, color, start_angle, end_angle, num_segments )
+fill_circle_sector( x, y, r, color, start_angle, end_angle, num_segments ) -- angles in degrees
 
 draw_line( x1, y1, x2, y2,  color, line_width)
 
