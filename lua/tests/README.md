@@ -9,7 +9,7 @@
  
  ## settings
 
-Edit the `XN_SETTINGS` table in [settings.lua](../settings.lua). This file is run on the lua VM before the window is created and the user lua script is loaded
+Edit the `XN_SETTINGS` table in [settings.lua](../settings.lua). This file is run on the lua VM before the window is created and the main lua script is loaded
 
 ## graphics:  
 
@@ -34,12 +34,11 @@ measure_text( text, font_size)  --> width of the text in pixels
 
 -- textures
 load_texture( filepath ) --> texture object
-draw_texture( texture, x, y, tint=WHITE ) -- draw a texture
+draw_texture( texture, x, y, tint=WHITE )
 draw_texture_rect( texture, src_rect, dst_rect, angle, tint) -- resize, rotate, crop a texture
-    -- src_rect & dst_rect should be tables in this form:
-    -- { x=xval, y=yval, w=wval, h=hval }
+    -- src_rect & dst_rect should be tables with these indices: { x, y, w, h }
 load_render_texture( width, height ) --> special texture you can draw onto
-begin_texture_mode( texture ) -- send draw commands to the texture instead of the screen
+begin_texture_mode( texture ) -- send draw commands to a render-texture instead of the screen
 end_texture_mode() 
 
 -- shaders
@@ -55,21 +54,23 @@ set_uniform( shader, uniform_loc, uniform_value, uniform_type ) -- types listed 
 set_camera_mode( camera, mode ) -- set projection mode
 begin_3d_mode( camera ) 
 end_3d_mode()
+
 draw_grid( slices, spacing ) -- grid on a plane centered at (0,0,0)
 draw_sphere( position, radius, color )
 draw_sphere_wires( position, radius, rings, slices, color )
 draw_cube( position, scale, color )
 draw_cube_wires( position, scale, color )
 draw_cube_texture( texture, position, scale, tint )
+
 load_model( filepath ) -- .iqm model file --> model logical object
 unload_model( model )  -- free model/animation memory
-load_animations( model, filepath )  -- load animations from a .iqm file into a model
-update_model_animation( model, anim_num, frame_num ) -- set model pose
-get_animation_frame_count( model, anim_num ) -- get # of frames in an animation
 model_rotate_euler( model, x, y, z ) -- set model rotation
 draw_model(model, position, rotation_axis, rotation_angle, scale, tint )
 draw_model_basic( model, position, tint )
 
+load_animations( model, filepath )  -- load animations from a .iqm file into a model
+update_model_animation( model, anim_num, frame_num ) -- set model pose
+get_animation_frame_count( model, anim_num ) -- get # of frames in an animation
 
 -- smooth random number generation
 perlin2d( x, y, freq, depth ) 
@@ -110,6 +111,7 @@ end
 * `server.get_motion(i)` - cheap, easier way to get the most recent motion value for player i        
 
 ## physics 
+When a model is successfully loaded with `load_model()`, each of its meshes is checked for convexity. All convex meshes are stored internally as sets of planes(halfspaces), which can be used for separating axis collision tests. See [util/physics.lua](../util/physics.lua) for an implementation where stationary, rotating models act on sphere bodies.
 
 ```lua 
 euler_to_quaternion(eulerAngles) --> quaternion { x, y, z, w }
@@ -118,7 +120,9 @@ get_bounding_sphere(model) --> radius of the sphere bounding all possible rotati
 get_halfspace_bounds(model) --> table containing a table of bounding planes { point, normal } for each convex mesh in model
 
 model_set_position(model, position) -- submit model world coordinates to collision system
-separating_axis_sphere(model, sphere_center, sphere_radius ) --> table containing tables of collision results { d, s = { point, normal } } between the sphere and all loaded models
+separating_axis_sphere(model, sphere_center, sphere_radius ) --> table containing tables of collision results: 
+                                                             --     { d = signed_distance, s = { point, normal } } 
+                                                             -- between the sphere and all loaded models
 
 ```
 

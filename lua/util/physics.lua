@@ -1,4 +1,4 @@
--- 3D physics prototypes
+-- 3D physics classes
 
 Plane = {
     point=vec(0,0,0),
