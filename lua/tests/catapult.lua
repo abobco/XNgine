@@ -24,16 +24,22 @@ catapult_arm.reset_time    = 90
 spawn_pos = vec_add( vec(-17, 5, 0 ), catapult_arm.position )
 spawn_plane = -18
 catapult_ball = Sphere:new(vec_copy(spawn_pos), 0.5, ORANGE)
-ramp_ball = Sphere:new(vec_add(spawn_pos, vec(0,0, -15)), 0.5, RED)
+ramp_spawn = vec_add(spawn_pos, vec(0,10, -15))
+ramp_ball = Sphere:new(vec_copy(ramp_spawn), 0.5, RED)
+ramp_ball.spawn = ramp_spawn
+catapult_ball.spawn = spawn_pos
 
 balls = { catapult_ball, ramp_ball }
 
+
+
 -- curved ramp obstacle
-local ramp_offset =  vec(4.3, -10, 0)
+local ramp_offset =  vec(4.3, -20, 0)
 halfsphere_ramp = {
     mesh = MeshSet:new( vec_add(ramp_ball.position, ramp_offset), load_model("../models/halfsphere.iqm")),
-    collider = SphereContainer:new( vec_add(ramp_ball.position, ramp_offset), 4.8 )
 }
+halfsphere_ramp.collider = SphereContainer:new( vec_add(ramp_ball.position, ramp_offset), 4.8, halfsphere_ramp.mesh.model )
+
 
 obstacles = { catapult_arm , bucket }
 visible_objects = { catapult_ball, ramp_ball, bucket, halfsphere_ramp.mesh , catapult_arm }
@@ -87,6 +93,10 @@ function _fixedUpdate()
     for k, v in pairs(balls) do 
         v.vel.y += gravity.y
         v.position = vec_add(v.position, v.vel)
+        if v.position.y < spawn_plane then
+            v.position = vec_copy(v.spawn)
+            v.vel = vec(0, v.vel.y, 0)
+        end
     end
 
     local hsr = halfsphere_ramp.mesh
@@ -94,12 +104,8 @@ function _fixedUpdate()
     hsr.eulers = vec_lerp(hsr.eulers, vec_add(hsr.target_eulers, vec(curr_evt.y,  0,  curr_evt.z)), 0.1)
     model_rotate_euler(hsr.model, hsr.eulers.x, hsr.eulers.y, hsr.eulers.z)
 
-    -- respawn check
-    if catapult_ball.position.y < spawn_plane then
-        respawn()
-    end 
 
-    halfsphere_ramp.collider:sphere_collision(ramp_ball, halfsphere_ramp.mesh.model)
+    halfsphere_ramp.collider:sphere_collision(ramp_ball, halfsphere_ramp.mesh, 0.3)
     
     -- rotate catapult_arm
     catapult_arm.time_shot += 1

@@ -273,6 +273,24 @@ static AABB get_model_AABB( Model *model ) {
     return box;
 }
 
+int lua_getModelAABB( lua_State *L ) {
+    int id = luaL_checkinteger(L, 1);
+    Model* model =  &get_gamestate()->modelSet.models[id];
+    
+    AABB box = get_model_AABB(model);
+
+    lua_newtable(L);
+    lua_pushstring(L, "min");
+    lua_pushVector3(L, box.min);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "max");
+    lua_pushVector3(L, box.max);
+    lua_settable(L, -3);
+
+    return 1;
+}
+
 int lua_getBoundingSphere( lua_State *L ) {
     int id = luaL_checkinteger(L, 1);
     Model* model =  &get_gamestate()->modelSet.models[id];

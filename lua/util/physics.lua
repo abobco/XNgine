@@ -65,37 +65,63 @@ function Sphere:draw()
     draw_sphere(self.position, self.radius, self.color)
 end
 
+
 SphereContainer = { 
     position = vec(0,0,0),
     radius = 5,
     color = TRANSPARENT,
-    top = Plane:new()
+    aabb = {}
 }
 
-function SphereContainer:new(pos, radius, color)
+function SphereContainer:new(pos, radius, model)
     local o = o or {}
     setmetatable(o, {__index = self}) 
     o.position = pos or vec_copy(SphereContainer.position)
     o.radius = radius or SphereContainer.radius
-    o.color = color or SphereContainer.color
-    -- o.up = vec_copy(SphereContainer.up)
-    o.top = Plane:new(o.position, vec(0,0, 1))
+
+    o.aabb = model_get_aabb(model)
     return o
 end
 
-function SphereContainer:sphere_collision(sphere, model)
-    local orig_n = vec_copy(self.top.normal)
-    self.top.normal = vec_transform_model_matrix( model, self.top.normal )
-    if sep_axis({ self.top }, sphere) then 
-        sphere.control_object = self
+function SphereContainer:sphere_collision(sphere, meshset, angular_vel_scale)
+    -- AABB in local space => OBB in world space
+    local planes = { 
+        Plane:new(self.aabb.max, vec(0,0, 1)),
+        Plane:new(self.aabb.max, vec(0, 1,0)),
+        Plane:new(self.aabb.max, vec( 1,0,0)),
+        Plane:new(self.aabb.min, vec(0,0,-1)),
+        Plane:new(self.aabb.min, vec(0,-1,0)),
+        Plane:new(self.aabb.min, vec(-1,0,0)),
+    }
+    for k, v in pairs(planes) do        
+        v.point = vec_transform_model_matrix(meshset.model, v.point)
+        v.point = vec_add(v.point, self.position)
+        v.normal = vec_transform_model_matrix(meshset.model, v.normal)
+    end
+    local open_side = planes[1]
+
+    -- sphere-OBB intersection test
+    local results = sep_axis(planes, sphere)
+    if results then
+        if sphere.control_object == nil then 
+            if results.s.point == open_side.point and results.s.normal == open_side.normal then
+                -- ball enters ramp
+                sphere.control_object = self 
+            else
+                -- ball collides w/ plane boundary
+                sphere_plane_collision_response(sphere, meshset, results, angular_vel_scale)
+                return
+            end
+        end
+        
+        -- ramp collision response
         local d = vec_sub(sphere.position, self.position)
         if vec_len_sqr(d) > ((self.radius - sphere.radius)*(self.radius - sphere.radius)) then
-             -- direction from ramp center to sphere before and after the physics update
-            local d1 = vec_sub(sphere.prev_position, self.position)
+            -- translate body
             local d2 = vec_scale(vec_norm(d), self.radius - sphere.radius)
-            
             sphere.position = vec_add( self.position, d2 )
-            -- sphere.vel = vec_rotate_quaternion(sphere.vel, q)
+
+            -- project velocity onto surface
             local surf_norm = vec_sub(self.position, sphere.position)
             if vec_dot(sphere.vel, surf_norm) < 0 then 
                 sphere.vel = vec_scale( vec_norm(vec_rej( sphere.vel, vec_norm(surf_norm) )), vec_len(sphere.vel))
@@ -103,13 +129,12 @@ function SphereContainer:sphere_collision(sphere, model)
    
         end
     elseif sphere.control_object == self then
-        -- project sphere velocity onto container top normal when leaving ramp
-        local dot = vec_dot(sphere.vel, self.top.normal)
-        sphere.vel = vec_scale( self.top.normal, dot ) 
+        -- project sphere velocity onto open side normal when leaving ramp
+        local dot = vec_dot(sphere.vel, open_side.normal)
+        sphere.vel = vec_scale( open_side.normal, dot ) 
         sphere.control_object = nil
     end
     sphere.prev_position = vec_copy(sphere.position)
-    self.top.normal = orig_n
 end
 
 Hash = {
@@ -238,37 +263,39 @@ function sep_axis( sides, sphere )
     return {d=closest_d, s=closest_side}
 end
 
--- collision/rigidbody update
+-- rigidbody update
+function sphere_plane_collision_response(sphere, meshset, collision_results, angular_vel_scale)
+    -- translate ball
+    local plane_to_sphere = vec_scale(collision_results.s.normal, collision_results.d)
+    sphere.position = vec_sub(sphere.position, plane_to_sphere)
+    
+    -- apply angular velocity to ball
+    if meshset.prev_eulers and meshset.bounciness == 0 then
+        local collision_center = vec_sub(sphere.position, plane_to_sphere )
+        local radius = vec_len(vec_sub(collision_center, meshset.position))
+        local angular_vel = vec_sub(meshset.eulers, meshset.prev_eulers)
+        local linear_vel = vec_scale( collision_results.s.normal, vec_len(vec_scale(angular_vel, radius*angular_vel_scale)))
+        sphere.vel = vec_add(sphere.vel, linear_vel)
+    end
+
+    -- project velocity onto collision surface
+    local dot = vec_dot(sphere.vel, collision_results.s.normal)
+    if dot < 0 then
+        local proj = vec_scale(collision_results.s.normal, dot)
+        sphere.vel = vec_sub(sphere.vel, proj)
+        if meshset.bounciness > 0 then
+            ball.vel = vec_add(vec_scale(collision_results.s.normal, meshset.bounciness), ball.vel)
+        end
+    end
+end
+
+-- spatial hash pruning + sphere_plane_collision_response()
 function ball_collisions( ball, hash, angular_vel_scale )
     angular_vel_scale = angular_vel_scale or 0.15 
-
     for k, v in pairs(hash:get_meshes(ball.position)) do
         local results = separating_axis_sphere(v.model, ball.position, ball.radius)
         for mk, mv in pairs(results) do
-            ball.active_object = v  -- set motion control object
-
-            -- translate ball
-            local plane_to_sphere = vec_scale(mv.s.normal, mv.d)
-            ball.position = vec_sub(ball.position, plane_to_sphere)
-            
-            -- apply angular velocity to ball
-            if v.prev_eulers and v.bounciness == 0 then
-                local collision_center = vec_sub(ball.position, plane_to_sphere )
-                local radius = vec_len(vec_sub(collision_center, v.position))
-                local angular_vel = vec_sub(v.eulers, v.prev_eulers)
-                local linear_vel = vec_scale( mv.s.normal, vec_len(vec_scale(angular_vel, radius*angular_vel_scale)))
-                ball.vel = vec_add(ball.vel, linear_vel)
-            end
-            
-            -- project velocity onto collision surface
-            local dot = vec_dot(ball.vel, mv.s.normal)
-            if dot < 0 then
-                local proj = vec_scale(mv.s.normal, dot)
-                ball.vel = vec_sub(ball.vel, proj)
-                if v.bounciness > 0 then
-                    ball.vel = vec_add(vec_scale(mv.s.normal, v.bounciness), ball.vel)
-                end
-            end
+            sphere_plane_collision_response(ball, v, mv, angular_vel_scale)
         end
     end
 end
