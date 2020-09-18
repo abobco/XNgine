@@ -130,9 +130,6 @@ int ws_create_thread(char *domain, int port) {
 	if ( port == 0 )
 		port = 3000;
 
-	// message_queue = queueCreate(); // delivers bluetooth and websocket messages to scripst
-	// pthread_mutex_init(&binary_sem, NULL); 
-
 	struct ServerOptions s = { domain, port };
 	pthread_t thread_id;
     pthread_create(&thread_id, NULL, &start_server_loop, (void*) &s );   

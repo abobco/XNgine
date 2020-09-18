@@ -86,7 +86,7 @@ function cls(c)
 end
 
 function draw_texture( texture, x, y, tint )
-    if not tint then tint = WHITE -- default no tiny
+    if not tint then tint = WHITE
     else -- convert to integers
         tint.r = floor(tint.r) 
         tint.g = floor(tint.g) 
