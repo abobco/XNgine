@@ -10,9 +10,8 @@ bounce_platforms = {
     MeshSet:new(vec(50, 8, 0), load_model("../models/bigpaddle.iqm"), MAROON),
     MeshSet:new(vec(30, 8, -60), load_model("../models/bigpaddle.iqm"), MAROON),
     MeshSet:new(vec(75, 25, -60), load_model("../models/bigpaddle.iqm"), MAROON),
+    -- MeshSet:new(vec(0, 5, -15), load_model("../models/bigpaddle.iqm"), MAROON),
 }
-
-bucket = MeshSet:new(vec(64, 0, -32*4 + 4), load_model("../models/square_bucket.iqm"), BEIGE)
 
 catapult_arm = MeshSet:new(vec(0, 8, 3),  load_model("../models/catapult_arm.iqm"), BROWN)
 catapult_arm.target_eulers = vec(pi/2, 0, 0)
@@ -31,18 +30,13 @@ catapult_ball.spawn = spawn_pos
 
 balls = { catapult_ball, ramp_ball }
 
-
-
--- curved ramp obstacle
+-- curved ramp obstacles
 local ramp_offset =  vec(4.3, -20, 0)
-halfsphere_ramp = {
-    mesh = MeshSet:new( vec_add(ramp_ball.position, ramp_offset), load_model("../models/halfsphere.iqm")),
-}
-halfsphere_ramp.collider = SphereContainer:new( vec_add(ramp_ball.position, ramp_offset), 4.8, halfsphere_ramp.mesh.model )
+halfsphere_ramp = SphereContainer:new( vec_add(ramp_ball.position, ramp_offset), 4.8, load_model("../models/halfsphere.iqm") )
+bucket_ramp = SphereContainer:new(vec(64, 0, -31*4 + 2), 4.8, load_model("../models/halfsphere.iqm"))
 
-
-obstacles = { catapult_arm , bucket }
-visible_objects = { catapult_ball, ramp_ball, bucket, halfsphere_ramp.mesh , catapult_arm }
+obstacles = { catapult_arm  }
+visible_objects = { catapult_ball, ramp_ball, halfsphere_ramp.meshset , catapult_arm, bucket_ramp.meshset }
 
 -- set up bounce platforms for chain reaction
 for k, v in pairs(bounce_platforms) do
@@ -54,7 +48,7 @@ for k, v in pairs(bounce_platforms) do
     visible_objects[#visible_objects+1] = v
 end
 
--- spacial hash grid
+-- spatial hash grid
 hash = Hash:new(40)
 for k, v in pairs(obstacles) do
     hash:add_meshset(v)
@@ -65,13 +59,13 @@ cam = Camera:new( vec_add(catapult_ball.position, vec(0, 32, 32)),     -- positi
                   vec(0, 1, 0) )                                       -- camera up
 cam:set_mode(CAMERA_PERSPECTIVE)
 cam.target_ball = ramp_ball
-cam.orbit_radius = 32
+cam.orbit_radius = 40
 
 function cam:set_orbit( radius, angle)
     angle = angle or pi/2
     cam.position = vec_lerp( 
         cam.position, 
-        vec_add( cam.target_ball.position, vec(cos(angle)*radius, 2*radius, sin(angle)*radius)), 
+        vec_add( cam.target_ball.position, vec(cos(angle)*radius, radius*3/2, sin(angle)*radius)), 
         0.05
     )
 end
@@ -99,13 +93,14 @@ function _fixedUpdate()
         end
     end
 
-    local hsr = halfsphere_ramp.mesh
+    local hsr = halfsphere_ramp.meshset
     hsr.prev_eulers = vec_copy(hsr.eulers)
     hsr.eulers = vec_lerp(hsr.eulers, vec_add(hsr.target_eulers, vec(curr_evt.y,  0,  curr_evt.z)), 0.1)
     model_rotate_euler(hsr.model, hsr.eulers.x, hsr.eulers.y, hsr.eulers.z)
 
-
-    halfsphere_ramp.collider:sphere_collision(ramp_ball, halfsphere_ramp.mesh, 0.3)
+    -- TODO: generalize this into convex polyhedron collision solver 
+    halfsphere_ramp:sphere_collision(ramp_ball, 0.3)
+    bucket_ramp:sphere_collision(catapult_ball, 0.3)
     
     -- rotate catapult_arm
     catapult_arm.time_shot += 1
@@ -117,6 +112,7 @@ function _fixedUpdate()
     model_rotate_euler(catapult_arm.model, catapult_arm.eulers.x, catapult_arm.eulers.y, catapult_arm.eulers.z)
 
     ball_collisions(catapult_ball, hash, 0.3)
+    ball_collisions(ramp_ball, hash, 0.3)
    
     -- cam:set_orbit(cam.orbit_radius, pi/2-time*0.0016)
     cam:set_orbit(cam.orbit_radius, pi/2)

@@ -70,7 +70,8 @@ SphereContainer = {
     position = vec(0,0,0),
     radius = 5,
     color = TRANSPARENT,
-    aabb = {}
+    aabb = {},
+    model = {},
 }
 
 function SphereContainer:new(pos, radius, model)
@@ -78,12 +79,13 @@ function SphereContainer:new(pos, radius, model)
     setmetatable(o, {__index = self}) 
     o.position = pos or vec_copy(SphereContainer.position)
     o.radius = radius or SphereContainer.radius
-
     o.aabb = model_get_aabb(model)
+    
+    o.meshset = MeshSet:new(pos, model)
     return o
 end
 
-function SphereContainer:sphere_collision(sphere, meshset, angular_vel_scale)
+function SphereContainer:sphere_collision(sphere, angular_vel_scale)
     -- AABB in local space => OBB in world space
     local planes = { 
         Plane:new(self.aabb.max, vec(0,0, 1)),
@@ -94,9 +96,9 @@ function SphereContainer:sphere_collision(sphere, meshset, angular_vel_scale)
         Plane:new(self.aabb.min, vec(-1,0,0)),
     }
     for k, v in pairs(planes) do        
-        v.point = vec_transform_model_matrix(meshset.model, v.point)
+        v.point = vec_transform_model_matrix(self.meshset.model, v.point)
         v.point = vec_add(v.point, self.position)
-        v.normal = vec_transform_model_matrix(meshset.model, v.normal)
+        v.normal = vec_transform_model_matrix(self.meshset.model, v.normal)
     end
     local open_side = planes[1]
 
@@ -109,7 +111,7 @@ function SphereContainer:sphere_collision(sphere, meshset, angular_vel_scale)
                 sphere.control_object = self 
             else
                 -- ball collides w/ plane boundary
-                sphere_plane_collision_response(sphere, meshset, results, angular_vel_scale)
+                sphere_plane_collision_response(sphere, self.meshset, results, angular_vel_scale)
                 return
             end
         end
@@ -137,6 +139,7 @@ function SphereContainer:sphere_collision(sphere, meshset, angular_vel_scale)
     sphere.prev_position = vec_copy(sphere.position)
 end
 
+-- spatial hash
 Hash = {
     cell_size = 32,
     hash = {}
@@ -172,6 +175,8 @@ function Hash:get_meshes(point)
     return self:get_cell(self:world_to_grid(point))
 end
 
+-- using a bounding sphere volume to decide which cells to insert meshset into
+-- so if the objects are not translated, cells don't need updating
 function Hash:add_meshset(meshset)
     local radius = get_bounding_sphere(meshset.model)
     local grid_pos = self:world_to_grid(meshset.position)
@@ -187,7 +192,6 @@ function Hash:add_meshset(meshset)
                     local cell_pos = vec_add(grid_pos, vec(i,j,k))
                     local cell = self:get_cell(cell_pos)
                     cell[#cell+1] = meshset
-                    -- print_vec(cell_pos, "model "..meshset.model.." cell pos:")
                 end
             end
         end
@@ -200,7 +204,6 @@ function Hash:draw_active_cells(balls)
         local cube_cen = vec_scale( vec(grid_pos.x, grid_pos.y, grid_pos.z), self.cell_size )
         local ext = vec_scale( vec(1, 1, 1), self.cell_size)
         cube_cen = vec_add( cube_cen,  vec_scale(ext, 0.5) )
-        -- cube_cen.y += ext.y
         draw_cube_wires(
             cube_cen,
             vec_scale( vec(1, 1, 1), self.cell_size),
@@ -284,7 +287,7 @@ function sphere_plane_collision_response(sphere, meshset, collision_results, ang
         local proj = vec_scale(collision_results.s.normal, dot)
         sphere.vel = vec_sub(sphere.vel, proj)
         if meshset.bounciness > 0 then
-            ball.vel = vec_add(vec_scale(collision_results.s.normal, meshset.bounciness), ball.vel)
+            sphere.vel = vec_add(vec_scale(collision_results.s.normal, meshset.bounciness), sphere.vel)
         end
     end
 end
