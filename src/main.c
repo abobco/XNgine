@@ -43,7 +43,7 @@ int main(int argc, const char **argv)
     // Initialization
     // ---------------------------------------------------------------------------------------------
     // i/o threads
-    int num_gamepad_threads = 2;
+    const int num_gamepad_threads = 2;
     pthread_t server_thread, pair_thread, gamepad_thread[num_gamepad_threads]; 
     init_msg_q();
     for ( int i =0; i < num_gamepad_threads; i++)

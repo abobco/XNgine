@@ -3,7 +3,7 @@
  ********************************************************************************************/
 
 #define SECS_PER_UPDATE 0.01666
-#define PROFILING 0
+// #define PROFILING 0
 #define PROFILE_DURATION 30
 
 #include <stdlib.h>
@@ -22,7 +22,7 @@
 #include "graphics/particles.h"
 #include "servers/bt/gamepad_server.h"
 
-#if PROFILING 
+#ifdef PROFILING 
 #include "gperftools/profiler.h" 
 #endif
 
@@ -43,7 +43,7 @@ int main(int argc, const char **argv)
     // Initialization
     // ---------------------------------------------------------------------------------------------
     // i/o threads
-    int num_gamepad_threads = 2;
+    const int num_gamepad_threads = 2;
     pthread_t server_thread, pair_thread, gamepad_thread[num_gamepad_threads]; 
     init_msg_q();
     for ( int i =0; i < num_gamepad_threads; i++)
@@ -117,8 +117,8 @@ int main(int argc, const char **argv)
         check_lua(L, luaL_dofile(L, "../lua/main.lua"));
     //--------------------------------------------------------------------------------------
 
-#if PROFILING
-    ProfilerStart("XN-Tron-RPI-pass.prof"); // start recording performance
+#ifdef PROFILING
+    ProfilerStart("XNgine-pass.prof"); // start recording performance
 #endif
     // Main game loop
     // --------------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ int main(int argc, const char **argv)
     
     // Cleanup
     // --------------------------------------------------------------------------------------
-#if PROFILING
+#ifdef PROFILING
     ProfilerStop();                  // stop recording performance
 #endif
     // CloseAudioDevice();         // Close audio device (music streaming is automatically stopped)
