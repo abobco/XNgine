@@ -6,11 +6,11 @@ time = 0
 curr_evt = vec(0,0,0)
 
 -- flat obstacles
+spawn_plane = -18
 bounce_platforms = {
     MeshSet:new(vec(50, 8, 0), load_model("../models/bigpaddle.iqm"), MAROON),
     MeshSet:new(vec(30, 8, -60), load_model("../models/bigpaddle.iqm"), MAROON),
     MeshSet:new(vec(75, 25, -60), load_model("../models/bigpaddle.iqm"), MAROON),
-    -- MeshSet:new(vec(0, 5, -15), load_model("../models/bigpaddle.iqm"), MAROON),
 }
 
 catapult_arm = MeshSet:new(vec(0, 8, 3),  load_model("../models/catapult_arm.iqm"), BROWN)
@@ -19,46 +19,70 @@ catapult_arm.rest_eulers   = vec(pi/2, 0, 0)
 catapult_arm.time_shot     = 0
 catapult_arm.reset_time    = 90
 
--- physics bodies
-spawn_pos = vec_add( vec(-17, 5, 0 ), catapult_arm.position )
-spawn_plane = -18
-catapult_ball = Sphere:new(vec_copy(spawn_pos), 0.5, ORANGE)
-ramp_spawn = vec_add(spawn_pos, vec(0,10, -15))
-ramp_ball = Sphere:new(vec_copy(ramp_spawn), 0.5, RED)
-ramp_ball.spawn = ramp_spawn
-catapult_ball.spawn = spawn_pos
-
-balls = { catapult_ball, ramp_ball }
-
 -- curved ramp obstacles
-local ramp_offset =  vec(4.3, -20, 0)
-halfsphere_ramp = SphereContainer:new( vec_add(ramp_ball.position, ramp_offset), 4.8, load_model("../models/halfsphere.iqm") )
-bucket_ramp = SphereContainer:new(vec(64, 0, -31*4 + 2), 4.8, load_model("../models/halfsphere.iqm"))
+local ramp_anchor = vec(-30, 100, 15)
+ramps = {
+    CylinderContainer:new( vec_add(ramp_anchor, vec(2.5, -5, 0)), 3, load_model("../models/halfpipe.iqm") ),
+    CylinderContainer:new( vec_add(ramp_anchor, vec(-25, -30, -20)), 3, load_model("../models/halfpipe.iqm") ),
+    CylinderContainer:new( vec_add(ramp_anchor, vec(20, -50, -30)), 3, load_model("../models/halfpipe.iqm") ),
+    CylinderContainer:new( vec_add(ramp_anchor, vec(20, -80, -70)), 3, load_model("../models/halfpipe.iqm") ),
 
-obstacles = { catapult_arm  }
-visible_objects = { catapult_ball, ramp_ball, halfsphere_ramp.meshset , catapult_arm, bucket_ramp.meshset }
+    SphereContainer:new(vec(64, 0, -31*4 + 2), 4.8, load_model("../models/halfsphere.iqm") ),
+    SphereContainer:new( vec_add(ramp_anchor, vec(10, -100, -50)), 4.8, load_model("../models/halfsphere.iqm") ),
+}
+controllable_ramp = ramps[#ramps]
 
--- set up bounce platforms for chain reaction
+-- physics bodies
+balls = {
+    Sphere:new(vec_add( catapult_arm.position, vec(-17, 5, 0 ) ), 0.5, ORANGE),
+    Sphere:new(ramp_anchor, 0.5, RED)
+}
+
+-- scene setup
+visible_objects = { }        -- rendering list
+obstacles = { catapult_arm } -- collision list
+
+for k, v in pairs(balls) do 
+    visible_objects[#visible_objects+1] = v
+end
+
+for k, v in pairs(ramps) do
+    obstacles[#obstacles+1] = v.meshset
+
+    if k < 5 then
+        -- rotate for chain reaction
+        local sign = -1
+        if k % 2 == 0 then sign = 1 end 
+        model_rotate_euler(v.meshset.model, pi/2, pi/2 - sign*pi/6, sign*pi/8)
+    end
+end
+model_rotate_euler(ramps[3].meshset.model, 3*pi/4, -pi/6, -pi/6)
+model_rotate_euler(ramps[4].meshset.model, pi/2,pi/6, pi/2)
+
+for k, v in pairs(obstacles) do 
+    visible_objects[#visible_objects+1] = v
+end
+
 for k, v in pairs(bounce_platforms) do
+    obstacles[#obstacles+1] = v
+    visible_objects[#visible_objects+1] = v
+
+    -- rotate for chain reaction
     local sign = -1
     if k % 2 == 0 then sign = 1 end 
     model_rotate_euler(v.model, sign*3*pi/8, 0, sign*pi/6)
     v.bounciness = 0.7
-    obstacles[#obstacles+1] = v
-    visible_objects[#visible_objects+1] = v
 end
 
--- spatial hash grid
+-- spatial hash collision filter
 hash = Hash:new(40)
 for k, v in pairs(obstacles) do
     hash:add_meshset(v)
 end
 
-cam = Camera:new( vec_add(catapult_ball.position, vec(0, 32, 32)),     -- position
-                  catapult_ball.position,                              -- target
-                  vec(0, 1, 0) )                                       -- camera up
+cam = Camera:new()
 cam:set_mode(CAMERA_PERSPECTIVE)
-cam.target_ball = ramp_ball
+cam.target_ball = balls[#balls]
 cam.orbit_radius = 40
 
 function cam:set_orbit( radius, angle)
@@ -70,14 +94,16 @@ function cam:set_orbit( radius, angle)
     )
 end
 
--- call these from the lua console to launch the ball
+-- call these from the lua console
 function shoot()
     catapult_arm.time_shot = 0
     catapult_arm.target_eulers = vec(pi/2, 0, pi/2)
 end
 function respawn()
-    catapult_ball.position = vec_copy(spawn_pos)
-    catapult_ball.vel = vec(0, catapult_ball.vel.y, 0)
+    for k, v in pairs(balls) do 
+        v.position = vec_copy(v.spawn)
+        v.vel = vec(0,0, 0)
+    end
 end
 
 -- _fixedUpdate() is called at 60 hz
@@ -89,18 +115,14 @@ function _fixedUpdate()
         v.position = vec_add(v.position, v.vel)
         if v.position.y < spawn_plane then
             v.position = vec_copy(v.spawn)
-            v.vel = vec(0, v.vel.y, 0)
+            v.vel = vec(0,0, 0)
         end
     end
 
-    local hsr = halfsphere_ramp.meshset
+    local hsr = controllable_ramp.meshset
     hsr.prev_eulers = vec_copy(hsr.eulers)
     hsr.eulers = vec_lerp(hsr.eulers, vec_add(hsr.target_eulers, vec(curr_evt.y,  0,  curr_evt.z)), 0.1)
     model_rotate_euler(hsr.model, hsr.eulers.x, hsr.eulers.y, hsr.eulers.z)
-
-    -- TODO: generalize this into convex polyhedron collision solver 
-    halfsphere_ramp:sphere_collision(ramp_ball, 0.3)
-    bucket_ramp:sphere_collision(catapult_ball, 0.3)
     
     -- rotate catapult_arm
     catapult_arm.time_shot += 1
@@ -111,8 +133,9 @@ function _fixedUpdate()
     catapult_arm.eulers = vec_lerp(catapult_arm.eulers, catapult_arm.target_eulers, 0.03)
     model_rotate_euler(catapult_arm.model, catapult_arm.eulers.x, catapult_arm.eulers.y, catapult_arm.eulers.z)
 
-    ball_collisions(catapult_ball, hash, 0.3)
-    ball_collisions(ramp_ball, hash, 0.3)
+    for k, v in pairs(balls) do 
+        ball_collisions(v, hash, 0.3)
+    end
    
     -- cam:set_orbit(cam.orbit_radius, pi/2-time*0.0016)
     cam:set_orbit(cam.orbit_radius, pi/2)
@@ -120,7 +143,7 @@ end
 
 -- _draw() is called once every frame update
 function _draw()
-    -- handle input
+    -- get 1st player input
     local x, y, z = server.get_motion(0)
     curr_evt = vec_scale( vec(x, y, z), 2)
 

@@ -60,11 +60,11 @@ void remove_id( void *id ) {
     }
 }
 
+// thread-safe message insertion
 void enq_msg(Message msg) {
-    pthread_mutex_lock(&binary_sem); // lock the shared resource      
-    enq(message_queue, msg); // add the message to the queue to the queue
-    pthread_mutex_unlock(&binary_sem); // release to other threads
- 
+    pthread_mutex_lock(&binary_sem);    
+    enq(message_queue, msg); 
+    pthread_mutex_unlock(&binary_sem); 
 }
 
 MessageList pop_new_messages() {

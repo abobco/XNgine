@@ -13,6 +13,11 @@ function Plane:new(pos, normal)
     return o
 end
 
+MeshTypes = {
+    FLAT = 0,
+    CURVED = 1,
+}
+
 MeshSet = {
     position = vec(0,0,0),
     model = 0,
@@ -20,6 +25,7 @@ MeshSet = {
     eulers = vec(pi/2,0,0),
     target_eulers = vec(pi/2, 0, 0),
     bounciness = 0,
+    type = MeshTypes.FLAT
 }
 
 function MeshSet:new(pos, model, tint)
@@ -31,6 +37,7 @@ function MeshSet:new(pos, model, tint)
     o.eulers = MeshSet.eulers
     o.bounciness = MeshSet.bounciness
     o.target_eulers = vec_copy(MeshSet.target_eulers)
+    o.type = MeshSet.type
 
     model_rotate_euler(o.model, pi/2, 0, 0)
     model_set_position(o.model, o.position)
@@ -47,7 +54,8 @@ Sphere = {
     color = RED,
     control_object = nil,
     vel = vec(0, 0, 0),
-    prev_position = vec(0, 0, 0)
+    prev_position = vec(0, 0, 0),
+    spawn = vec(0,0,0)
 }
 
 function Sphere:new(pos, radius, color)
@@ -58,6 +66,7 @@ function Sphere:new(pos, radius, color)
     o.color = color or Sphere.color
     o.vel = vec_copy(Sphere.vel)
     o.prev_position = vec_copy(Sphere.prev_position)
+    o.spawn = vec_copy(pos)
     return o
 end
 
@@ -65,13 +74,29 @@ function Sphere:draw()
     draw_sphere(self.position, self.radius, self.color)
 end
 
+function aabb_to_obb(aabb, model, position)
+    local planes = { 
+        Plane:new(aabb.max, vec(0,0, 1)),
+        Plane:new(aabb.max, vec(0, 1,0)),
+        Plane:new(aabb.max, vec( 1,0,0)),
+        Plane:new(aabb.min, vec(0,0,-1)),
+        Plane:new(aabb.min, vec(0,-1,0)),
+        Plane:new(aabb.min, vec(-1,0,0)),
+    }
+    for k, v in pairs(planes) do        
+        v.point = vec_transform_model_matrix(model, v.point)
+        v.point = vec_add(v.point, position)
+        v.normal = vec_transform_model_matrix(model, v.normal)
+    end
+    return planes
+end
 
 SphereContainer = { 
     position = vec(0,0,0),
     radius = 5,
     color = TRANSPARENT,
     aabb = {},
-    model = {},
+    meshset = {},
 }
 
 function SphereContainer:new(pos, radius, model)
@@ -82,24 +107,13 @@ function SphereContainer:new(pos, radius, model)
     o.aabb = model_get_aabb(model)
     
     o.meshset = MeshSet:new(pos, model)
+    o.meshset.type = MeshTypes.CURVED
+    o.meshset.parent = o
     return o
 end
 
 function SphereContainer:sphere_collision(sphere, angular_vel_scale)
-    -- AABB in local space => OBB in world space
-    local planes = { 
-        Plane:new(self.aabb.max, vec(0,0, 1)),
-        Plane:new(self.aabb.max, vec(0, 1,0)),
-        Plane:new(self.aabb.max, vec( 1,0,0)),
-        Plane:new(self.aabb.min, vec(0,0,-1)),
-        Plane:new(self.aabb.min, vec(0,-1,0)),
-        Plane:new(self.aabb.min, vec(-1,0,0)),
-    }
-    for k, v in pairs(planes) do        
-        v.point = vec_transform_model_matrix(self.meshset.model, v.point)
-        v.point = vec_add(v.point, self.position)
-        v.normal = vec_transform_model_matrix(self.meshset.model, v.normal)
-    end
+    local planes = aabb_to_obb(self.aabb, self.meshset.model, self.position)
     local open_side = planes[1]
 
     -- sphere-OBB intersection test
@@ -137,6 +151,99 @@ function SphereContainer:sphere_collision(sphere, angular_vel_scale)
         sphere.control_object = nil
     end
     sphere.prev_position = vec_copy(sphere.position)
+end
+
+CylinderContainer = {
+    position = vec(0,0,0),
+    bottom = vec(0,0,0),
+    top = vec(0,0,1),
+    radius = 3,
+    color = TRANSPARENT,
+    aabb = {},
+    meshset = {}, 
+}
+
+function CylinderContainer:new(pos, r, model)
+    local o = o or {}
+    setmetatable(o, {__index = self}) 
+    o.position = pos or CylinderContainer.position
+    o.bottom = vec(0,8,0)
+    o.top = vec(0,-8,0)
+    o.radius = r or CylinderContainer.radius
+    o.meshset = MeshSet:new(pos, model, WHITE)
+    o.meshset.parent = o
+    o.meshset.type = MeshTypes.CURVED
+    o.aabb = model_get_aabb(model)
+    return o
+end
+
+function closest_pt_linesegment_pt(a,b,c)
+    local closest_pt = {}
+    local ab = vec_sub(b, a)
+    local t = vec_dot(vec_sub(c, a), ab)
+    if t <= 0 then
+        -- clamp to bottom
+        t = 0
+        closest_pt = a
+    else
+        local denom = vec_dot(ab, ab) -- always positive
+        if t >= denom then
+            -- clamp to top
+            t = 1
+            closest_pt = b
+        else
+            -- do deferred divide
+            t = t/denom
+            closest_pt = vec_add(a, vec_scale(ab, t))
+        end
+    end
+    return { t=t, point=closest_pt }
+end
+
+function CylinderContainer:sphere_collision(sphere, angular_vel_scale)
+    local planes = aabb_to_obb(self.aabb, self.meshset.model, self.position)
+    local open_side = planes[1]
+
+    -- sphere-OBB intersection test
+    local results = sep_axis(planes, sphere)
+    if results then
+        if sphere.control_object == nil then 
+            if results.s.point == open_side.point and results.s.normal == open_side.normal then
+                -- ball enters ramp
+                sphere.control_object = self 
+            else
+                -- ball collides w/ plane boundary
+                sphere_plane_collision_response(sphere, self.meshset, results, angular_vel_scale)
+                return
+            end
+        end
+    
+        -- ramp collision response
+        local a = vec_transform_model_matrix(self.meshset.model, self.bottom)
+        a = vec_add(a, self.position)
+        local b = vec_transform_model_matrix(self.meshset.model, self.top)
+        b = vec_add(b, self.position)
+
+        local closest = closest_pt_linesegment_pt(a, b, sphere.position)
+        local d = vec_sub( sphere.position, closest.point)
+        -- print(closest.t)
+        if vec_len_sqr(d) > ((self.radius - sphere.radius)*(self.radius - sphere.radius)) then
+            -- translate body
+            local d2 = vec_scale(vec_norm(d), self.radius - sphere.radius)
+            sphere.position = vec_add( closest.point, d2 )
+
+            -- project velocity onto surface
+            local surf_norm = vec_sub(closest.point, sphere.position)
+            if vec_dot(sphere.vel, surf_norm) < 0 then 
+                sphere.vel = vec_scale( vec_norm(vec_rej( sphere.vel, vec_norm(surf_norm) )), vec_len(sphere.vel))
+            end
+        end
+    elseif sphere.control_object == self then
+        -- project sphere velocity onto open side normal when leaving ramp
+        -- local dot = vec_dot(sphere.vel, open_side.normal)
+        -- sphere.vel = vec_scale( open_side.normal, dot ) 
+        sphere.control_object = nil        
+    end
 end
 
 -- spatial hash
@@ -296,9 +403,14 @@ end
 function ball_collisions( ball, hash, angular_vel_scale )
     angular_vel_scale = angular_vel_scale or 0.15 
     for k, v in pairs(hash:get_meshes(ball.position)) do
-        local results = separating_axis_sphere(v.model, ball.position, ball.radius)
-        for mk, mv in pairs(results) do
-            sphere_plane_collision_response(ball, v, mv, angular_vel_scale)
+        if v.type == MeshTypes.FLAT then
+            local results = separating_axis_sphere(v.model, ball.position, ball.radius)
+            for mk, mv in pairs(results) do
+                sphere_plane_collision_response(ball, v, mv, angular_vel_scale)
+                ball.active_object = v
+            end
+        elseif v.type == MeshTypes.CURVED then
+            v.parent:sphere_collision(ball, angular_vel_scale)
         end
     end
 end

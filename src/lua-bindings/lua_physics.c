@@ -52,24 +52,6 @@ Transform lua_getTransform( lua_State *L, int table_stack_idx ) {
     return (Transform) {t, q, s};
 }
 
-static void extreme_points_in_direction(Vector3 dir, float *verts, int n, int *imin, int *imax) {
-    float min_proj = FLT_MAX;
-    float max_proj = -FLT_MAX;
-    for ( int i = 0; i < n; i++ ) {
-        Vector3 vert = get_vert(verts, i*3);
-        float proj = Vector3DotProduct(vert, dir);
-        
-        if ( proj < min_proj ) {
-            min_proj = proj;
-            *imin = i;
-        }
-        if ( proj > max_proj ) {
-            max_proj = proj;
-            *imax = i;
-        }
-    }
-}
-
 void mesh_load_physics_data(ModelSet *m) {
     int mesh_count = m->models[m->count].meshCount;
     m->convexMeshBounds[m->count].meshes = malloc( sizeof(PlaneSet) * mesh_count );
@@ -234,6 +216,24 @@ void mesh_load_physics_data(ModelSet *m) {
     m->convexMeshBounds[m->count].mesh_count = convex_polys - OBBs;
 }
 
+static void extreme_points_in_direction(Vector3 dir, float *verts, int n, int *imin, int *imax) {
+    float min_proj = FLT_MAX;
+    float max_proj = -FLT_MAX;
+    for ( int i = 0; i < n; i++ ) {
+        Vector3 vert = get_vert(verts, i*3);
+        float proj = Vector3DotProduct(vert, dir);
+        
+        if ( proj < min_proj ) {
+            min_proj = proj;
+            *imin = i;
+        }
+        if ( proj > max_proj ) {
+            max_proj = proj;
+            *imax = i;
+        }
+    }
+}
+
 typedef struct AABB {
     Vector3 min;
     Vector3 max;
@@ -346,6 +346,85 @@ int lua_getConvexMeshBounds( lua_State *L ) {
         lua_settable(L, -3);
     }
 
+    return 1;
+}
+
+static Vector3 mesh_get_centroid(Mesh *mesh) {
+    Vector3 centroid = {0};
+    for ( int i = 0; i < mesh->vertexCount; i++) {
+        Vector3 v = get_vert(mesh->vertices, i*3);
+        centroid = Vector3Add(centroid, v);
+    }
+    return Vector3Scale(centroid, 1.0f/mesh->vertexCount);
+}
+
+static Vector3 model_get_centroid(Model *model) {
+    Vector3 centroid = {0};
+    int total_verts = 0;
+    for ( int i = 0; i < model->meshCount; i++) {
+        total_verts += model->meshes[i].vertexCount;
+        for ( int j = 0; j < model->meshes[i].vertexCount; j++) {
+            Vector3 v = get_vert(model->meshes[i].vertices, i*3);
+            centroid = Vector3Add(centroid, v);
+        }
+    }
+    return Vector3Scale(centroid, 1.0f/total_verts);
+}
+
+int lua_getConvexHull(lua_State *L) {
+    // quickhull 
+
+    // get aabb
+    int id = luaL_checkinteger(L, 1);
+    Model* model =  &get_gamestate()->modelSet.models[id];
+    
+    // get an array of all verts in model
+    int total_verts = 0;
+    for ( int i = 0; i < model->meshCount; i++ ) { 
+        total_verts += model->meshes[i].vertexCount;
+    }
+    float model_verts[total_verts*3];
+    int idx = 0;
+    for ( int i = 0; i < model->meshCount; i++ ) { 
+        for ( int j = 0; j < model->meshes[i].vertexCount*3; j++ ) {
+            model_verts[idx++] = model->meshes[i].vertices[j];
+        }
+    }
+
+    // get extreme points along coordinate axes
+    Vector3 axes[3] = {
+        (Vector3) {1, 0, 0},
+        (Vector3) {0, 1, 0},
+        (Vector3) {0, 0, 1}
+    };
+    Vector3 extreme_points[3][2];
+    for ( int i = 0; i < 3; i++ ) {
+        int imin, imax;
+        extreme_points_in_direction(
+            axes[i], 
+            model_verts, 
+            total_verts,
+            &imin, &imax
+        );
+        extreme_points[i][0] = get_vert(model_verts, imin*3);
+        extreme_points[i][1] = get_vert(model_verts, imax*3);
+    }
+
+    for ( int i = 0; i < 3; i++) {
+        print_vec(extreme_points[i][0]);
+        print_vec(extreme_points[i][1]);
+    }
+    
+
+    // connect extreme points along each axis
+
+    // discard points inside this volume
+
+    // for each edge, find the point furthest away
+        // insert point into hull
+
+    // recurse
+    
     return 1;
 }
 

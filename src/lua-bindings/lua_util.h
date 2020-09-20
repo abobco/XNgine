@@ -206,6 +206,7 @@ int lua_setModelTransform( lua_State *L );
 int lua_separatingAxisSphere(lua_State *L);
 void mesh_load_physics_data(ModelSet *m);
 int lua_getModelAABB( lua_State *L );
+int lua_getConvexHull(lua_State *L);
 
 // define lua host libraries
 static const struct luaL_Reg lua_server_f[] = {
@@ -303,6 +304,7 @@ static const struct luaL_Reg lua_raylib[] = {
     { "model_set_position", lua_setModelPosition},
     { "separating_axis_sphere", lua_separatingAxisSphere },
     { "model_get_aabb", lua_getModelAABB },
+    { "model_get_convex_hull", lua_getConvexHull },
     {0,0}
 };
 
