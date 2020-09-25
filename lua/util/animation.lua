@@ -132,10 +132,11 @@ function bezierY(t)
     return bezier1d( 0.0, 0.0, 1.0, 1.0, t ) 
 end
 
-function draw_countdown(t, x, y, size)
+function draw_countdown(t, x, y, size, color)
     size = size or 50
+    color = color or RED
     t = 3 - math.floor(t)
     x = x or screen_center.x - measure_text(t, size)
     y = y or 100
-    draw_text(t, x , y, size, RED)
+    draw_text(t, x , y, size, color)
 end

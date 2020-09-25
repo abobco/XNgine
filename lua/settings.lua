@@ -165,10 +165,13 @@ function vec_sub(a, b)
 end 
 
 function vec_len(a)
-    if a.w ~= nil then
-        return sqrt( a.x*a.x + a.y*a.y + a.z*a.z + a.w*a.w)
+    local nd = 0
+    local sum = 0
+    for k, v in pairs(a) do
+        sum += v*v
+        nd += 1
     end
-    return sqrt( a.x*a.x + a.y*a.y + a.z*a.z)
+    return sum/nd
 end
 
 function vec_len_sqr(a)
