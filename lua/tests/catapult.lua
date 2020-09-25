@@ -25,7 +25,8 @@ ramps = {
     CylinderContainer:new( vec_add(ramp_anchor, vec(2.5, -5, 0)), 3, load_model("../models/halfpipe.iqm") ),
     CylinderContainer:new( vec_add(ramp_anchor, vec(-25, -30, -20)), 3, load_model("../models/halfpipe.iqm") ),
     CylinderContainer:new( vec_add(ramp_anchor, vec(20, -50, -30)), 3, load_model("../models/halfpipe.iqm") ),
-    CylinderContainer:new( vec_add(ramp_anchor, vec(20, -80, -70)), 3, load_model("../models/halfpipe.iqm") ),
+    CylinderContainer:new( vec_add(ramp_anchor, vec(20
+    , -80, -70)), 3, load_model("../models/halfpipe.iqm") ),
 
     SphereContainer:new(vec(64, 0, -31*4 + 2), 4.8, load_model("../models/halfsphere.iqm") ),
     SphereContainer:new( vec_add(ramp_anchor, vec(10, -100, -50)), 4.8, load_model("../models/halfsphere.iqm") ),

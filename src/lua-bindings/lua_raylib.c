@@ -664,7 +664,6 @@ int lua_TakeScreenshot( lua_State *L ) {
     return 0;
 } 
 
-
 // --------------------------------- audio ------------------------------------
 
 int lua_loadAudioStream(lua_State *L) {

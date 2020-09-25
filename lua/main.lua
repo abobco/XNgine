@@ -8,23 +8,39 @@ gravity = vec(0,-0.01, 0)
 
 obstacles = {
     MeshSet:new(vec(  0,  8,  0), load_model("../models/bumper_paddle_f.iqm"), BROWN),
-    MeshSet:new(vec(  0, 10,-30), load_model("../models/bumper_paddle_l.iqm"), BROWN),
+    -- MeshSet:new(vec(  0, 10,-30), load_model("../models/bumper_paddle_l.iqm"), BROWN),
     MeshSet:new(vec(-30, 20,-30), load_model("../models/bumper_paddle_r.iqm"), BROWN),
     MeshSet:new(vec(  0, 30,-30), load_model("../models/bumper_paddle_fb.iqm"), BROWN),
     MeshSet:new(vec(  0, 35,-60), load_model("../models/bigpaddle.iqm"), BROWN),
     MeshSet:new(vec(  0, 34,-89), load_model("../models/2x3x20.iqm"), BROWN),
-    MeshSet:new(vec(  0, 40,-140), load_model("../models/bigpaddle.iqm"), BROWN),
+    MeshSet:new(vec(  0, 40,-130), load_model("../models/bigpaddle.iqm"), BROWN),
     
     -- MeshSet:new(vec(-30,  8,-10), load_model("../models/tower.iqm"), BROWN)
 }
 
 spinners =  {
-    MeshSet:new(vec(  0, 58, -80), load_model("../models/3x2x20.iqm"), BROWN),
-    MeshSet:new(vec(  0, 58,-105), load_model("../models/3x2x20.iqm"), BROWN)
+    MeshSet:new(vec(0, 58,  -80), load_model("../models/3x2x20.iqm"), BROWN),
+    MeshSet:new(vec(0, 58, -105), load_model("../models/3x2x20.iqm"), BROWN)
 }
 for k, v in pairs(spinners) do
     obstacles[#obstacles+1] = v
     v.target_eulers = vec(0,0,0)
+end
+
+local ramp_anchor = vec( 0, 40,-160)
+ramps = {
+    CylinderContainer:new( vec_add(ramp_anchor, vec(2.5, 5, 0)), 3, load_model("../models/halfpipe.iqm") ),
+    CylinderContainer:new( vec(0, 10, -25), 6, load_model("../models/halfpipe.iqm") ),
+    -- SphereContainer:new( vec(0, 10, -25), 9.6, load_model("../models/halfsphere.iqm") ),
+    -- CylinderContainer:new( vec_add(ramp_anchor, vec(-25, -30, -20)), 3, load_model("../models/halfpipe.iqm") ),
+    -- CylinderContainer:new( vec_add(ramp_anchor, vec(20, -50, -30)), 3, load_model("../models/halfpipe.iqm") ),
+    -- CylinderContainer:new( vec_add(ramp_anchor, vec(20, -80, -70)), 3, load_model("../models/halfpipe.iqm") ),
+
+    -- SphereContainer:new(vec(64, 0, -31*4 + 2), 4.8, load_model("../models/halfsphere.iqm") ),
+    -- SphereContainer:new( vec_add(ramp_anchor, vec(10, -100, -50)), 4.8, load_model("../models/halfsphere.iqm") ),
+}
+for k, v in pairs(ramps) do 
+    obstacles[#obstacles+1] = v.meshset
 end
 
 ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, MAROON)
@@ -54,8 +70,7 @@ function respawn()
     cam.position = vec_add(ball.position, vec(0,16, cam_orb_rad))
 end
 
-cam_ang_speed = 0
-cam_orb_rad = 32
+cam_orb_rad =40
 cam = Camera:new( vec_add(ball.position, vec(cam_orb_rad, cam_orb_rad/2, 0)),     -- position
                   ball.position,                                       -- target
                   vec(0, 1, 0) )                                       -- camera up

@@ -25,10 +25,11 @@ MeshSet = {
     eulers = vec(pi/2,0,0),
     target_eulers = vec(pi/2, 0, 0),
     bounciness = 0,
-    type = MeshTypes.FLAT
+    type = MeshTypes.FLAT,
+    scale = vec(1,1,1)
 }
 
-function MeshSet:new(pos, model, tint)
+function MeshSet:new(pos, model, tint, scale)
     local o = o or {}
     setmetatable(o, {__index = self}) 
     o.position = pos or MeshSet.position
@@ -38,6 +39,7 @@ function MeshSet:new(pos, model, tint)
     o.bounciness = MeshSet.bounciness
     o.target_eulers = vec_copy(MeshSet.target_eulers)
     o.type = MeshSet.type
+    o.scale = scale or MeshSet.scale
 
     model_rotate_euler(o.model, pi/2, 0, 0)
     model_set_position(o.model, o.position)
@@ -45,7 +47,14 @@ function MeshSet:new(pos, model, tint)
 end
 
 function MeshSet:draw()
-    draw_model_basic(self.model, self.position, self.tint )
+    -- draw_model_basic(self.model, self.position, self.tint )
+    draw_model(self.model, 
+               self.position, 
+               vec(0,1,0),
+               0,
+               self.scale,
+               self.tint)
+    
 end
 
 Sphere = { 
@@ -91,12 +100,20 @@ function aabb_to_obb(aabb, model, position)
     return planes
 end
 
+function scale_aabb(aabb, scale)
+    local cen = vec_scale(vec_add(aabb.min, aabb.max), 0.5)
+    local hw = vec_sub(aabb.max, cen)
+    aabb.max = vec_add(aabb.max, vec_scale(hw, scale-1.0))
+    aabb.min = vec_sub(aabb.min, vec_scale(hw, scale-1.0))
+end
+
 SphereContainer = { 
     position = vec(0,0,0),
     radius = 5,
     color = TRANSPARENT,
     aabb = {},
     meshset = {},
+    scale = 1
 }
 
 function SphereContainer:new(pos, radius, model)
@@ -105,8 +122,10 @@ function SphereContainer:new(pos, radius, model)
     o.position = pos or vec_copy(SphereContainer.position)
     o.radius = radius or SphereContainer.radius
     o.aabb = model_get_aabb(model)
+    o.scale =  o.radius/4.8
+    scale_aabb(o.aabb,o.scale)
     
-    o.meshset = MeshSet:new(pos, model)
+    o.meshset = MeshSet:new(pos, model, WHITE, vec_scale(vec(1,1,1), o.scale))
     o.meshset.type = MeshTypes.CURVED
     o.meshset.parent = o
     return o
@@ -119,6 +138,7 @@ function SphereContainer:sphere_collision(sphere, angular_vel_scale)
     -- sphere-OBB intersection test
     local results = sep_axis(planes, sphere)
     if results then
+        sphere.active_object = self.meshset
         if sphere.control_object == nil then 
             if results.s.point == open_side.point and results.s.normal == open_side.normal then
                 -- ball enters ramp
@@ -161,19 +181,24 @@ CylinderContainer = {
     color = TRANSPARENT,
     aabb = {},
     meshset = {}, 
+    scale = 1 
 }
 
 function CylinderContainer:new(pos, r, model)
     local o = o or {}
     setmetatable(o, {__index = self}) 
     o.position = pos or CylinderContainer.position
-    o.bottom = vec(0,8,0)
-    o.top = vec(0,-8,0)
     o.radius = r or CylinderContainer.radius
-    o.meshset = MeshSet:new(pos, model, WHITE)
+    o.scale = o.radius/3
+    o.aabb = model_get_aabb(model)
+    scale_aabb(o.aabb, o.scale)
+    o.bottom = vec(0,o.aabb.min.y,0)
+    o.top = vec(0,o.aabb.max.y,0)
+    print_vec(o.bottom, "bot")
+    print_vec(o.top, "bot")
+    o.meshset = MeshSet:new(pos, model, WHITE, vec_scale(vec(1,1,1), r/3))
     o.meshset.parent = o
     o.meshset.type = MeshTypes.CURVED
-    o.aabb = model_get_aabb(model)
     return o
 end
 
@@ -181,18 +206,16 @@ function closest_pt_linesegment_pt(a,b,c)
     local closest_pt = {}
     local ab = vec_sub(b, a)
     local t = vec_dot(vec_sub(c, a), ab)
-    if t <= 0 then
-        -- clamp to bottom
+
+    if t <= 0 then -- clamp to bottom
         t = 0
         closest_pt = a
     else
-        local denom = vec_dot(ab, ab) -- always positive
-        if t >= denom then
-            -- clamp to top
+        local denom = vec_dot(ab, ab) -- always positive   
+        if t >= denom then -- clamp to top
             t = 1
             closest_pt = b
-        else
-            -- do deferred divide
+        else -- do deferred divide
             t = t/denom
             closest_pt = vec_add(a, vec_scale(ab, t))
         end
@@ -202,15 +225,32 @@ end
 
 function CylinderContainer:sphere_collision(sphere, angular_vel_scale)
     local planes = aabb_to_obb(self.aabb, self.meshset.model, self.position)
-    local open_side = planes[1]
+    local open_sides = { planes[1], planes[2], planes[5] }
+    -- for k, v in pairs(planes) do
+    --     print(k)
+    --     print_vec(v.normal)
+    -- end
 
     -- sphere-OBB intersection test
     local results = sep_axis(planes, sphere)
     if results then
+        sphere.active_object = self.meshset
         if sphere.control_object == nil then 
-            if results.s.point == open_side.point and results.s.normal == open_side.normal then
+            local entryside = false
+            for k, v in pairs(open_sides) do
+                if results.s.point == v.point and results.s.normal == v.normal then
+                    -- ball enters ramp
+                    entryside = true
+                    break
+                end
+            end
+            if entryside then sphere.control_object = self
+
+            -- if (results.s.point == open_side.point and results.s.normal == open_side.normal) 
+            -- or (results.s.point == open_side.point and results.s.normal == open_side.normal) 
+            -- or (results.s.point == open_side.point and results.s.normal == open_side.normal) then
                 -- ball enters ramp
-                sphere.control_object = self 
+                -- sphere.control_object = self 
             else
                 -- ball collides w/ plane boundary
                 sphere_plane_collision_response(sphere, self.meshset, results, angular_vel_scale)
@@ -286,6 +326,9 @@ end
 -- so if the objects are not translated, cells don't need updating
 function Hash:add_meshset(meshset)
     local radius = get_bounding_sphere(meshset.model)
+    if meshset.parent then 
+        radius *= meshset.parent.scale
+    end
     local grid_pos = self:world_to_grid(meshset.position)
     local max_span = ceil(radius / self.cell_size)
     for i = -max_span, max_span do 
