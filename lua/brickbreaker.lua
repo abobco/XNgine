@@ -3,8 +3,9 @@ dofile("../lua/util/animation.lua")
 time = 0
 interval = 1/60
 cursor = vec_copy(screen_center)
+paddle_target = vec_copy(screen_center)
 
-MAX_HORIZ_BOUNCE = 2.0
+MAX_HORIZ_BOUNCE = 3
 MAX_LIVES = 3
 score = 0
 lives = MAX_LIVES
@@ -109,7 +110,32 @@ bricks = reset_bricks({})
 -- _fixedUpdate() is called at 60 hz
 function _fixedUpdate()
     time += interval
-    paddle.position.x = lerp(paddle.position.x, cursor.x, 0.075)    
+    if #bricks == 0 then bricks = reset_bricks() end
+
+    if server.get_connections() > 0 then
+        paddle_target = vec_copy(cursor)
+    elseif ball.vel.y > 0 then
+        -- auto move the paddle
+
+        -- find ball's future position where it reaches the paddle's y position
+        local d = vec_sub(paddle.position, ball.position)
+        local t = d.y/ball.vel.y
+        paddle_target.x = ball.position.x + ball.vel.x*t 
+        
+        -- find required xvel to hit last brick in the list
+        local target = bricks[#bricks].position
+        local d2 = vec_sub(target, vec(paddle_target.x, paddle.position.y ) ) 
+        local t2 = d2.y/(-ball.vel.y)
+        local xvel = d2.x/t2
+        
+        -- take the velocity equation from when the ball collides with the paddle, 
+        -- solve for the paddle position to get desired xvel, 
+        -- clamp to paddle's x bounds
+        local unclamped = -xvel / (MAX_HORIZ_BOUNCE/paddle.extents.x) + ball.position.x + ball.vel.x*t
+        paddle_target.x = max(paddle_target.x - paddle.extents.x,  min( paddle_target.x + paddle.extents.x, unclamped ))
+    end
+
+    paddle.position.x = lerp(paddle.position.x, paddle_target.x, 0.075)    
     
     if time > 3 then 
         local translation = vec_add( ball.vel, vec_scale(ball.vel, score*0.001 ))
@@ -141,7 +167,7 @@ function _fixedUpdate()
 end
 
 -- _draw() is called once every frame update
-function _draw()   
+function _draw() 
     cursor = get_cursor_pos(0)
 
     -- handle box-circle collisions
@@ -204,4 +230,5 @@ function _draw()
     begin_shader_mode(filter)
         draw_texture(fb)
     end_shader_mode()
+
 end
