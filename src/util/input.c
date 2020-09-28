@@ -98,12 +98,13 @@ int getch() {
 TerminalInfo create_TerminalInfo(  lua_State *L ) {
     char *ib = calloc( 512, sizeof(char));
     TerminalInfo t = {
-        false,
         0,
         L,
         0,
+        false,
+        false,
         "terminal_history.txt",
-        ib,
+        ib
     };
     
     return t;
@@ -133,7 +134,8 @@ static void print_terminal(TerminalInfo *terminal) {
                 break;
 
                 case 'c':
-                    CloseWindow();
+                    // CloseWindow();
+                    terminal->quit = true;
                 break;
             }   
         } else {

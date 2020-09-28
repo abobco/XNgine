@@ -103,8 +103,9 @@ end
 function scale_aabb(aabb, scale)
     local cen = vec_scale(vec_add(aabb.min, aabb.max), 0.5)
     local hw = vec_sub(aabb.max, cen)
-    aabb.max = vec_add(aabb.max, vec_scale(hw, scale-1.0))
-    aabb.min = vec_sub(aabb.min, vec_scale(hw, scale-1.0))
+    hw = vec_scale(hw, scale)
+    aabb.max = vec_add(cen, hw)
+    aabb.min = vec_sub(cen, hw)
 end
 
 SphereContainer = { 
@@ -189,14 +190,14 @@ function CylinderContainer:new(pos, r, model)
     setmetatable(o, {__index = self}) 
     o.position = pos or CylinderContainer.position
     o.radius = r or CylinderContainer.radius
-    o.scale = o.radius/3
+    o.scale = 0.75 * o.radius / CylinderContainer.radius
     o.aabb = model_get_aabb(model)
     scale_aabb(o.aabb, o.scale)
     o.bottom = vec(0,o.aabb.min.y,0)
     o.top = vec(0,o.aabb.max.y,0)
     print_vec(o.bottom, "bot")
     print_vec(o.top, "bot")
-    o.meshset = MeshSet:new(pos, model, WHITE, vec_scale(vec(1,1,1), r/3))
+    o.meshset = MeshSet:new(pos, model, WHITE, vec_scale(vec(1,1,1), o.scale))
     o.meshset.parent = o
     o.meshset.type = MeshTypes.CURVED
     return o
@@ -209,12 +210,12 @@ function closest_pt_linesegment_pt(a,b,c)
 
     if t <= 0 then -- clamp to bottom
         t = 0
-        closest_pt = a
+        closest_pt = vec_copy(a)
     else
         local denom = vec_dot(ab, ab) -- always positive   
         if t >= denom then -- clamp to top
             t = 1
-            closest_pt = b
+            closest_pt = vec_copy(b)
         else -- do deferred divide
             t = t/denom
             closest_pt = vec_add(a, vec_scale(ab, t))
@@ -245,12 +246,6 @@ function CylinderContainer:sphere_collision(sphere, angular_vel_scale)
                 end
             end
             if entryside then sphere.control_object = self
-
-            -- if (results.s.point == open_side.point and results.s.normal == open_side.normal) 
-            -- or (results.s.point == open_side.point and results.s.normal == open_side.normal) 
-            -- or (results.s.point == open_side.point and results.s.normal == open_side.normal) then
-                -- ball enters ramp
-                -- sphere.control_object = self 
             else
                 -- ball collides w/ plane boundary
                 sphere_plane_collision_response(sphere, self.meshset, results, angular_vel_scale)
@@ -265,23 +260,32 @@ function CylinderContainer:sphere_collision(sphere, angular_vel_scale)
         b = vec_add(b, self.position)
 
         local closest = closest_pt_linesegment_pt(a, b, sphere.position)
-        local d = vec_sub( sphere.position, closest.point)
-        -- print(closest.t)
-        if vec_len_sqr(d) > ((self.radius - sphere.radius)*(self.radius - sphere.radius)) then
+        local d = vec_sub(sphere.position, closest.point)
+        if vec_len(d) >= ((self.radius - sphere.radius)) then
             -- translate body
-            local d2 = vec_scale(vec_norm(d), self.radius - sphere.radius)
+            local d2 = vec_scale(vec_norm(d), self.radius - sphere.radius )
             sphere.position = vec_add( closest.point, d2 )
 
-            -- project velocity onto surface
-            local surf_norm = vec_sub(closest.point, sphere.position)
+            -- apply angular velocity to ball
+            local surf_norm = vec_norm(vec_sub(closest.point, sphere.position))
+            -- if self.meshset.prev_eulers and self.meshset.bounciness == 0 then
+            --     local collision_center = vec_sub(sphere.position, self.position)
+            --     local radius = vec_len(vec_sub(collision_center, self.meshset.position))
+            --     local angular_vel = vec_sub(self.meshset.eulers, self.meshset.prev_eulers)
+            --     local linear_vel = vec_scale( surf_norm, vec_len(vec_scale(angular_vel, radius*0.1)))
+            --     sphere.vel = vec_add(sphere.vel, linear_vel)
+            -- end
+
+            -- project velocity onto surface     
             if vec_dot(sphere.vel, surf_norm) < 0 then 
-                sphere.vel = vec_scale( vec_norm(vec_rej( sphere.vel, vec_norm(surf_norm) )), vec_len(sphere.vel))
+                sphere.vel = vec_rej( sphere.vel, surf_norm )
+                -- sphere.vel = vec_scale( vec_norm(vec_rej( sphere.vel, vec_norm(surf_norm) )), vec_len(sphere.vel))
             end
         end
     elseif sphere.control_object == self then
         -- project sphere velocity onto open side normal when leaving ramp
-        -- local dot = vec_dot(sphere.vel, open_side.normal)
-        -- sphere.vel = vec_scale( open_side.normal, dot ) 
+        local dot = vec_dot(sphere.vel, open_sides[1].normal)
+        sphere.vel = vec_scale( open_sides[1].normal, dot ) 
         sphere.control_object = nil        
     end
 end
@@ -444,7 +448,7 @@ end
 
 -- spatial hash pruning + sphere_plane_collision_response()
 function ball_collisions( ball, hash, angular_vel_scale )
-    angular_vel_scale = angular_vel_scale or 0.15 
+    angular_vel_scale = angular_vel_scale or 0.3
     for k, v in pairs(hash:get_meshes(ball.position)) do
         if v.type == MeshTypes.FLAT then
             local results = separating_axis_sphere(v.model, ball.position, ball.radius)

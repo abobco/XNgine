@@ -2,6 +2,7 @@ dofile("../lua/util/3dcam.lua")
 dofile("../lua/util/physics.lua")
          
 score = 0
+save_path = "physics_game_save_file.txt"
 
 curr_evt = vec(0,0,0)
 gravity = vec(0,-0.01, 0)
@@ -43,7 +44,24 @@ for k, v in pairs(ramps) do
     obstacles[#obstacles+1] = v.meshset
 end
 
-ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, MAROON)
+-- load save file 
+local savefile = io.open(save_path, "r")
+if savefile then
+    local t = savefile:read("*all")
+    local saved_pos = strsplit(t, " ")
+    for k, v in pairs(saved_pos) do 
+        saved_pos[k] = tonumber(v)
+    end
+
+    spawn = vec(saved_pos[1], saved_pos[2], saved_pos[3])
+    savefile:close()
+else 
+    spawn = vec_add(obstacles[1].position, vec(0,6,0))
+end
+
+
+-- ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, MAROON)
+ball = Sphere:new(spawn, 0.5, MAROON)
 ball.vel = vec(0,0,0)
 ball.max_spd = 1
 ball.active_object = obstacles[1]
@@ -149,4 +167,10 @@ function _draw()
 
     draw_fps()
     -- draw_text("score: "..score, screen_center.x-40, 20, 20, RED)
+end
+
+function _quit() 
+   local f = assert(io.open("physics_game_save_file.txt", "w+"))
+   f:write(ball.position.x, " ", ball.position.y, " ", ball.position.z)
+   print('hello')
 end

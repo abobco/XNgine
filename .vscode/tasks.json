@@ -17,7 +17,7 @@
         // used to launch an exe on the remote server through a task
         // "remote_exe_filename": "XNgl",
         "remote_exe_filename": "XNgine",
-        "remote_exe_args": "../lua/brickbreaker.lua",
+        // "remote_exe_args": "../lua/brickbreaker.lua",
         // "remote_exe_args": "../lua/tests/catapult.lua",
         // "remote_exe_args": "../lua/tests/3d.lua",
         // "remote_exe_args": "../lua/tests/2d.lua",
@@ -25,6 +25,7 @@
         // "remote_exe_args": "../lua/tests/shaders.lua",
         // "remote_exe_args": "../lua/tests/gameloop.lua",
 
+        
         // if the project has too many folders, winscp's file-sync won't work properly, so
         // you can set exclude patterns here
         "file_sync_filemask": "|*.git/;*-src/;*-subbuild/;*CMakeFiles/;" // https:k//winscp.net/eng/docs/file_mask

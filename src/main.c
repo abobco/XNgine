@@ -127,7 +127,7 @@ int main(int argc, const char **argv)
     double previous_frame_time = GetTime();
     double lag = 0;
 
-    while ( !WindowShouldClose() ) 
+    while ( !terminal.quit ) 
     {   
         handle_keyboard_input(&terminal);
 
@@ -154,6 +154,7 @@ int main(int argc, const char **argv)
     ProfilerStop();                  // stop recording performance
 #endif
     // CloseAudioDevice();         // Close audio device (music streaming is automatically stopped)
+    lua_check_script_function( L, "_quit");
     
     for (int i =0; i< num_gamepad_threads; i++ )  {
         pthread_cancel(gamepad_thread[i]);

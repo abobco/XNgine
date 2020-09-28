@@ -134,8 +134,7 @@ function _fixedUpdate()
         local unclamped = -xvel / (MAX_HORIZ_BOUNCE/paddle.extents.x) + ball.position.x + ball.vel.x*t
         paddle_target.x = max(paddle_target.x - paddle.extents.x,  min( paddle_target.x + paddle.extents.x, unclamped ))
     end
-
-    paddle.position.x = lerp(paddle.position.x, paddle_target.x, 0.075)    
+    paddle.position.x = lerp(paddle.position.x, paddle_target.x, 0.075)   
     
     if time > 3 then 
         local translation = vec_add( ball.vel, vec_scale(ball.vel, score*0.001 ))

@@ -45,13 +45,15 @@ enum RelevantKeys {
 };
 
 typedef struct TerminalInfo {
-    int isOpen;
     int cursorPos;
     lua_State *L;
     // FILE *history;
     int hist_pos;
+    int isOpen:1;
+    int quit:1;
     const char *f_name;
     char *input;
+
 } TerminalInfo;
 
 TerminalInfo create_TerminalInfo( lua_State *L );
