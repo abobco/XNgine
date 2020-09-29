@@ -16,7 +16,8 @@
 
         // used to launch an exe on the remote server through a task
         // "remote_exe_filename": "XNgl",
-        "remote_exe_filename": "XNgine",
+        "remote_exe_filename": "asmtest",
+        // "remote_exe_filename": "XNgine",
         // "remote_exe_args": "../lua/brickbreaker.lua",
         // "remote_exe_args": "../lua/tests/catapult.lua",
         // "remote_exe_args": "../lua/tests/3d.lua",
