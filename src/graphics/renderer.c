@@ -112,3 +112,34 @@ void draw_scene(TerminalInfo* terminal) {
 
     EndDrawing();
 }
+
+
+void draw_scene_min(TerminalInfo* terminal) {
+    XN_GameState *g = get_gamestate();
+    // BeginDrawing();
+    // ClearBackground((Color) {30, 30, 30, 255});
+
+    lua_check_script_function(terminal->L, "_draw");
+    // draw lua terminal
+    if ( terminal->isOpen ) {
+        DrawRectangle( 0, 0, g->settings->_SCREEN_WIDTH, 120, (Color) {30, 30, 30, 150} );
+
+        char disp_txt[514] = "> ";
+        strcat(disp_txt, terminal->input);
+        DrawText((const char*)disp_txt, 30, 80, 20, MAROON);
+
+        if ( fmod(GetTime(), 1.0) > 0.5 ) {
+            // get cursor screen pos
+            char before_cursor[514];
+            strcpy(before_cursor, disp_txt);
+            for ( int i = 2 + terminal->cursorPos; i < strlen(before_cursor); i++ ) {
+                before_cursor[i] = '\0';
+            }  
+
+            // draw cursor
+            DrawRectangle( 32 + MeasureText(before_cursor, 20), 80 , 10,20, MAROON);
+        }        
+    }
+
+    // EndDrawing();
+}

@@ -9,27 +9,32 @@
   "options": {
       "env": {
         // connection info to ssh into the remote server
-        "hostname" : "10.0.0.2",           
+        "hostname" : "raspberrypi",           
         "user": "pi",                
         "remote_root": "/home/pi/shared/XNgine-src",  // path to the clone on the raspi
-        "putty_key": "C:/Users/abobc/.ssh/raspi-key.ppk", // path to private ssh key from puttygen
+        "putty_key": "C:/Users/abobc/.ssh/raspi-key-spring.ppk", // path to private ssh key from puttygen
 
         // used to launch an exe on the remote server through a task
         // "remote_exe_filename": "XNgl",
-        "remote_exe_filename": "asmtest",
-        // "remote_exe_filename": "XNgine",
+        // "remote_exe_filename": "asmtest",
+        "remote_exe_filename": "XNgine",
+        // "remote_exe_args": "../lua/clean_america.lua",
+        // "remote_exe_args": "../lua/bouncemark.lua",
         // "remote_exe_args": "../lua/brickbreaker.lua",
         // "remote_exe_args": "../lua/tests/catapult.lua",
-        // "remote_exe_args": "../lua/tests/3d.lua",
+        "remote_exe_args": "../lua/tests/3d.lua",
         // "remote_exe_args": "../lua/tests/2d.lua",
         // "remote_exe_args": "../lua/tests/particles.lua",
         // "remote_exe_args": "../lua/tests/shaders.lua",
         // "remote_exe_args": "../lua/tests/gameloop.lua",
 
+        // "remote_exe_filename": "fbxloader",
+        // "remote_exe_args": "../models/2objects.fbx",
+
         
         // if the project has too many folders, winscp's file-sync won't work properly, so
         // you can set exclude patterns here
-        "file_sync_filemask": "|*.git/;*-src/;*-subbuild/;*CMakeFiles/;" // https:k//winscp.net/eng/docs/file_mask
+        "file_sync_filemask": "|*.git/;*-src/;*-subbuild/;*CMakeFiles/*compiled_asm/;" // https:k//winscp.net/eng/docs/file_mask
       }
   },
   // ---------------------------------------------------------------

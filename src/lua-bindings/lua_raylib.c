@@ -3,6 +3,7 @@
 #include "raylib.h"
 
 #include "../graphics/renderer.h"
+#include "../util/fbxloader/fbxloader.h"
 
 // Setup canvas (framebuffer) to start drawing 
 int lua_BeginDrawing( lua_State *L ) {
@@ -484,6 +485,20 @@ int lua_loadModel( lua_State *L ) {
     m->models[m->count].materials[0].maps[MAP_DIFFUSE].texture = get_gamestate()->defaultTexture;
 
     
+    printf("Model '%s' loaded:\t %d mesh%s:\n", mfile, m->models[m->count].meshCount, m->models[m->count].meshCount > 1 ? "es":"" );
+    mesh_load_physics_data(m);  // detects mesh convexity, fills internal physics data structures
+
+    lua_pushinteger(L, m->count++);
+
+    return 1;
+}
+
+int lua_loadModel_FBX( lua_State *L ) {
+    const char *mfile = luaL_checkstring(L, 1);
+    ModelSet *m =  &get_gamestate()->modelSet;
+    m->models[m->count] = LoadModel_FBX(mfile);
+    m->models[m->count].materials[0].maps[MAP_DIFFUSE].texture = get_gamestate()->defaultTexture;
+
     printf("Model '%s' loaded:\t %d mesh%s:\n", mfile, m->models[m->count].meshCount, m->models[m->count].meshCount > 1 ? "es":"" );
     mesh_load_physics_data(m);  // detects mesh convexity, fills internal physics data structures
 

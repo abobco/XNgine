@@ -34,6 +34,8 @@ void draw_particle_texture(ParticleInfo particle, ParticleTexture pt, Color colo
 
 void draw_scene(TerminalInfo *terminal);
 
+void draw_scene_min(TerminalInfo *terminal);
+
 void draw_particles(EmitterInfo* emitter);
 
 void fill_tex(RenderTexture2D tex, Color color);

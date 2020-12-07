@@ -9,10 +9,33 @@ extern "C" {
 #include "math.h"
 #include <stdlib.h>
 #include <float.h>
-// #include "../snake.h"
-// #include "../lua-bindings/lua_util.h"
 
 #define EPSILON 1e-6f    // I should probably be getting this value from the compiler but lazy
+
+// requires C11 compiler
+#define printf_dec_format(x) _Generic((x), \
+    char: "%c", \
+    signed char: "%hhd", \
+    unsigned char: "%hhu", \
+    signed short: "%hd", \
+    unsigned short: "%hu", \
+    signed int: "%d", \
+    unsigned int: "%u", \
+    long int: "%ld", \
+    unsigned long int: "%lu", \
+    long long int: "%lld", \
+    unsigned long long int: "%llu", \
+    float: "%f", \
+    double: "%f", \
+    long double: "%Lf", \
+    char *: "%s", \
+    void *: "%p")
+
+#define bprint(x) printf("%s = ", #x), printf(printf_dec_format(x), x)  
+#define bprintln(x) printf("%s = ", #x), printf(printf_dec_format(x), x), printf("\n");
+
+#define fprint(f, x) fprintf(f, "%s = ", #x), fprintf(f, printf_dec_format(x), x)  
+#define fprintln(f, x) fprintf(f, "%s = ", #x), fprintf(f, printf_dec_format(x), x), fprintf(f, "\n");
 
 #define print_vec(a) printf("%s = (%f, %f, %f)\n", #a, a.x, a.y, a.z );
 

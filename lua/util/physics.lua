@@ -239,7 +239,7 @@ function CylinderContainer:sphere_collision(sphere, angular_vel_scale)
         if sphere.control_object == nil then 
             local entryside = false
             for k, v in pairs(open_sides) do
-                if results.s.point == v.point and results.s.normal == v.normal then
+                if results.s.point == v.point and results.s.normal == v.normal and vec_dot(v.normal, sphere.vel) < 0 then
                     -- ball enters ramp
                     entryside = true
                     break

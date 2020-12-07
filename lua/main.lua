@@ -15,8 +15,10 @@ obstacles = {
     MeshSet:new(vec(  0, 35,-60), load_model("../models/bigpaddle.iqm"), BROWN),
     MeshSet:new(vec(  0, 34,-89), load_model("../models/2x3x20.iqm"), BROWN),
     MeshSet:new(vec(  0, 40,-130), load_model("../models/bigpaddle.iqm"), BROWN),
-    
-    -- MeshSet:new(vec(-30,  8,-10), load_model("../models/tower.iqm"), BROWN)
+
+    -- experimental fbx model loading
+    MeshSet:new(vec(  0, 20,0), load_model_fbx("../models/2objects.fbx"), BROWN),
+    MeshSet:new(vec(  0, 20,0), load_model_fbx("../models/nested_objects.fbx"), BROWN),
 }
 
 spinners =  {
@@ -58,7 +60,6 @@ if savefile then
 else 
     spawn = vec_add(obstacles[1].position, vec(0,6,0))
 end
-
 
 -- ball = Sphere:new(vec_add(obstacles[1].position, vec(0,6,0)), 0.5, MAROON)
 ball = Sphere:new(spawn, 0.5, MAROON)
@@ -172,5 +173,4 @@ end
 function _quit() 
    local f = assert(io.open("physics_game_save_file.txt", "w+"))
    f:write(ball.position.x, " ", ball.position.y, " ", ball.position.z)
-   print('hello')
 end

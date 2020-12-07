@@ -13,7 +13,6 @@ extern "C" {
 #include "../util/bob_math.h"
 
 #define PRINT(a) printf(#a " = %d\n", a)
-#define print(a) printf(#a " = %d\n", a)
 
 typedef struct XN_SETTINGS {
     // debug log option
@@ -194,6 +193,7 @@ int lua_getBoundingSphere( lua_State *L );
 int lua_setModelPosition( lua_State *L );
 int lua_drawModelBasic( lua_State *L );
 int lua_transformVectorByMatrix( lua_State *L );
+int lua_loadModel_FBX( lua_State *L );
 
 // physics
 int lua_rotateVectorByQuaternion( lua_State *L );
@@ -305,6 +305,7 @@ static const struct luaL_Reg lua_raylib[] = {
     { "separating_axis_sphere", lua_separatingAxisSphere },
     { "model_get_aabb", lua_getModelAABB },
     { "model_get_convex_hull", lua_getConvexHull },
+    { "load_model_fbx", lua_loadModel_FBX },
     {0,0}
 };
 

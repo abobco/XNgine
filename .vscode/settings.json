@@ -24,7 +24,8 @@
         "type_traits": "cpp",
         "random": "c",
         "cmath": "c",
-        "queue": "c"
+        "queue": "c",
+        "algorithm": "c"
     },
     "C_Cpp.default.includePath": [
         "./build/_deps/raylib-build/src/",

@@ -72,7 +72,7 @@ project(XNlib)
 set( lb src/lua-bindings )
 
 set( xnlib  
-  src/util/file_io.c src/util/linked_list.c
+  src/util/file_io.c src/util/linked_list.c src/util/fbxloader/fbxloader.c
   src/util/bob_math.h src/util/bob_math.c src/util/collisions.c 
   ${raylib_BINARY_DIR}/src/raylib.h 
   src/servers/message_queue.c src/util/input.c src/servers/bt/gamepad_server.c
@@ -85,6 +85,22 @@ link_directories(build/_deps/raylib-build/src)
 add_library(xnlib-fn STATIC ${xnlib} )
 
 # ========================================================================================
+
+project(robolib_build)
+
+set( arducam_dir src/SPI_Camera/src/ )
+
+set( robolib_src  
+    src/ws/message_queue.c 
+    ${arducam_dir}EZCAM.c 
+    ${arducam_dir}ArduCAM.c 
+    ${arducam_dir}bcm283x_board_driver.c 
+    ${arducam_dir}sccb_bus.c
+)
+
+# link_directories(build/_deps/raylib-build/src)
+
+add_library(robolib STATIC ${robolib_src} )
 
 # =============================== Build the darn game ====================================
 
@@ -111,14 +127,22 @@ macro(XN_Build project_name src_file)
   include_directories(build/_deps/libwebsockets-build/include ${raylib_BINARY_DIR}/src ${raylib_BINARY_DIR}/src/external build/_deps/lua-5.4.0/install/include) # compound assignment lua5.4 build
   find_library( LUA54 NAMES "lua" PATHS ${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/lua-5.4.0/install/lib NO_DEFAULT_PATH)
 
+  find_library(PIG NAMES libpigpio.so.1 PATHS src/pigpio-master/install/lib/ NO_DEFAULT_PATH )
+  find_library(PIGD NAMES libpigpiod_if2.so.1 PATHS src/pigpio-master/install/lib/ NO_DEFAULT_PATH )
+
+
   # cross compiler stuff
   set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
   set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "./")
-  target_link_libraries(${PROJECT_NAME} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn ${prof})
+  target_link_libraries(${PROJECT_NAME} ${PIG} ${PIGD} raylib vcos brcmGLESv2 brcmEGL pthread rt m bcm_host dl websockets ${LUA54} xnlib-fn ${prof} z robolib)
 endmacro()
 
 XN_Build( XNgine src/main.c )
 XN_Build( XNgine++ src/main.cpp )
 XN_Build( XNgl src/graphics/egl/egl_tests.c )
 XN_Build( asmtest src/util/asm/asmtest.c )
+
+XN_Build( Yamsim src/yamsim.cpp)
+# find_package(ZLIB)
+# XN_Build( fbxloader src/util/fbxloader/fbxparse.c)
 # set(CMAKE_C_FLAGS " ${CMAKE_C_FLAGS} -lglfw3 -lopengl32 -lgdi32 -Wall")

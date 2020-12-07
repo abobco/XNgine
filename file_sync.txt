@@ -1,7 +1,8 @@
 # This script only works if the file paths in the arguments have no spaces :)))
 
 # connect to the server
-open sftp://pi:xabnab19@10.0.0.2/ -hostkey="ssh-ed25519 256 M+ntLP1aN05Im+isHQsQqBQjSctvmHStSxM9NeEcS3I="
+# open sftp://pi:xabnab19@10.0.0.2/ -hostkey="ssh-ed25519 256 M+ntLP1aN05Im+isHQsQqBQjSctvmHStSxM9NeEcS3I=" # houston
+open sftp://pi:xabnab19@raspberrypi/ -hostkey="ssh-ed25519 256 M+ntLP1aN05Im+isHQsQqBQjSctvmHStSxM9NeEcS3I="
 # open sftp://pi:xabnab19@10.0.0.80/ -hostkey="ssh-ed25519 256 eK9MspOf1aedHNPD3+9HfBCE88hVJ4BuLKM4+gm9x0k=" -rawsettings FSProtocol=2 ConsiderDST=0 Shell="sudo%20su%20-"
 
 
